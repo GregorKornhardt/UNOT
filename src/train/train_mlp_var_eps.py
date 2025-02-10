@@ -93,7 +93,6 @@ class Training():
         fix_eps_batch = self.batch_size // self.numbr_rand_sample
 
         epsilon_fix = torch.ones(fix_eps_batch, 1, device=self.device) * 1e-2
-        #epsilon_rand = (torch.randn(self.numbr_rand_sample-1, 1, device=self.device) * 0.1)**2 + 1e-2
         epsilon_rand = torch.exp(torch.rand(self.numbr_rand_sample-1, 1, device=self.device) * (torch.log(torch.tensor(10.0)) - torch.log(torch.tensor(0.01))) + torch.log(torch.tensor(0.01)))
         epsilon = torch.cat([epsilon_fix, epsilon_rand.repeat(fix_eps_batch, 1)], dim=0)
 
@@ -180,40 +179,64 @@ class Training():
     def test_performance(self):
         if self.test_data is None:
             return
-            
-        def key_to_eps(key):
-            if key == '0.01':
-                return 0.01
-            elif key == '0.05':
-                return 0.05
-            elif key == '0.1':
-                return 0.1
-        
-        def test_loss(test_set, eps):
-            mu = test_set['mu'].to(self.device)
-            nu = test_set['nu'].to(self.device)
-            true_dist = test_set['dist']
-            test_dist = []
-            self.predictor.eval()
-            nu0 = torch.exp(self.predictor(mu, nu, torch.ones(mu.shape[0],1, device=self.device) * eps))
-            with torch.no_grad():
-                _,_,dist1 = sink_vec_dist(mu, nu, self.cost_matrix, self.sinkhorn_epsilon, nu0, 1)
-                    
-            test_dist = dist1.cpu().detach()
-            cond = ~torch.isnan(test_dist)
-            relative_error = (torch.abs(test_dist[cond]  - true_dist[cond]) / true_dist[cond]).mean()
-            self.predictor.train()
-            return relative_error
 
-        for key in self.test_data.keys():
-            for key2 in self.test_data[key].keys():
-                test_set = self.test_data[key][key2]
-                test_data_distance = test_loss(test_set, key_to_eps(key))
-                print(f'Relative error {key2} {key}: {test_data_distance}')
+        if self.length == 64:    
+            def key_to_eps(key):
                 if key == '0.01':
-                    wandb.log({'Relative error '+key2: test_data_distance})
-                else: 
-                    wandb.log({'Relative error '+key2 + ' '+key: test_data_distance})
+                    return 0.01
+                elif key == '0.05':
+                    return 0.05
+                elif key == '0.1':
+                    return 0.1
+            
+            def test_loss(test_set, eps):
+                print(test_set)
+                mu = test_set['mu'].to(self.device)
+                nu = test_set['nu'].to(self.device)
+                true_dist = test_set['dist']
+                test_dist = []
+                self.predictor.eval()
+                nu0 = torch.exp(self.predictor(mu, nu, torch.ones(mu.shape[0],1, device=self.device) * eps))
+                with torch.no_grad():
+                    _,_,dist1 = sink_vec_dist(mu, nu, self.cost_matrix, self.sinkhorn_epsilon, nu0, 1)
+                        
+                test_dist = dist1.cpu().detach()
+                cond = ~torch.isnan(test_dist)
+                relative_error = (torch.abs(test_dist[cond]  - true_dist[cond]) / true_dist[cond]).mean()
+                self.predictor.train()
+                return relative_error
 
+            for key in self.test_data.keys():
+                for key2 in self.test_data[key].keys():
+                    test_set = self.test_data[key][key2]
+                    test_data_distance = test_loss(test_set, key_to_eps(key))
+                    print(f'Relative error {key2} {key}: {test_data_distance}')
+                    if key == '0.01':
+                        wandb.log({'Relative error '+key2: test_data_distance})
+                    else: 
+                        wandb.log({'Relative error '+key2 + ' '+key: test_data_distance})
 
-    
+        else:       
+            def test_loss(test_set):
+                mu = test_set['mu'].to(self.device)
+                nu = test_set['nu'].to(self.device)
+                true_dist = test_set['dist']
+                self.predictor.eval()
+                nu0 = torch.exp(self.predictor(mu, nu, torch.ones(mu.shape[0],1, device=self.device) * 0.01))
+                with torch.no_grad():
+                    _,_,dist1= sink_vec_dist(mu, nu, self.cost_matrix, self.sinkhorn_epsilon, nu0, 1)
+                    
+                test_dist = dist1.cpu().detach()
+                nan_mask = ~torch.isnan(test_dist)
+                test_dist = test_dist[nan_mask]
+                true_dist = true_dist[nan_mask]
+                relative_error = (torch.abs(test_dist - true_dist) / true_dist).mean()
+                self.predictor.train()
+                return relative_error
+
+            for key in self.test_data.keys():
+                test_set = self.test_data[key]
+                test_data_distance = test_loss(test_set)
+                print(f'Relative error {key}: {test_data_distance}')
+                wandb.log({'Relative error '+key: test_data_distance})
+            

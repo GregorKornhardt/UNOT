@@ -4,51 +4,64 @@ import os
 import argparse
 import wandb
 
-import src.train.train as train
+import src.train.train_var_eps as train
 import src.ot.cost_matrix as cost
 from src.networks.FNO2d import FNO2d
 from src.networks.generator  import Generator
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training script for optimal transport")
-    parser.add_argument('--name', type=str, default='var_eps', help='Experiment name')
-    parser.add_argument('--length_latent', type=int, default=10, help='Length of latent space')
+
+    # Experiment & General Settings
+    parser.add_argument('--name', type=str, default='NO_var_eps', help='Experiment name')
+    parser.add_argument('--dtype', type=str, default='float32', help='Data type')
+    parser.add_argument('--wandb', type=bool, default=False, help='Use wandb for logging')
+
+    # Data & Input Settings
     parser.add_argument('--length', type=int, default=64, help='Length of input data')
-    parser.add_argument('--dust_const', type=float, default=1e-6, help='Dust constant') 
-    parser.add_argument('--dust', type=float, default=1e-4, help='Dust value')
+    parser.add_argument('--length_latent', type=int, default=10, help='Length of latent space')
+    parser.add_argument('--numbr_latend_samples', type=int, default=100, help='Number of latent samples')
+
+    # Generator Architecture
+    parser.add_argument('--generator', type=str, default='MLP', help='Generator model type')
     parser.add_argument('--num_layers', type=int, default=3, help='Number of layers in generator')
-    parser.add_argument('--modes_x', type=int, default=14, help='Fourier modes in x')
-    parser.add_argument('--modes_y', type=int, default=14, help='Fourier modes in y')
+    parser.add_argument('--skip_connection', type=float, default=1, help='Skip connection value in Generator')
+    parser.add_argument('--width_generator', type=int, default=4, help='Width of generator network, as a multiple of data length')
+
+    # Neural Operator (FNO) Architecture
+    parser.add_argument('--model', type=str, default='FNO', help='Neural operator model type')
+    parser.add_argument('--modes_x', type=int, default=20, help='Fourier modes in x')
+    parser.add_argument('--modes_y', type=int, default=20, help='Fourier modes in y')
     parser.add_argument('--fno_width', type=int, default=64, help='Width of FNO')
     parser.add_argument('--fno_blocks', type=int, default=4, help='Number of FNO Blocks')
-    parser.add_argument('--n_hidden_spectral_layers', type=int, default=3, help='Number of hidden layers in spectral network')
+    parser.add_argument('--n_hidden_spectral_layers', type=int, default=2, help='Number of hidden layers in spectral network')
+    parser.add_argument('--sobel', type=bool, default=False, help='Use Sobel filter')
+    parser.add_argument('--grid', type=bool, default=False, help='Use grid data')
+
+    # Regularization & Weight Decay
     parser.add_argument('--weight_decay_generator', type=float, default=0., help='Weight decay for generator')
-    parser.add_argument('--width_generator', type=float, default=0.04, help='Width of generator network, as a multiple of the length of the data')
     parser.add_argument('--weight_decay_predictor', type=float, default=1e-4, help='Weight decay for predictor')
-    parser.add_argument('--dtype', type=str, default='float32', help='Data type')
-    parser.add_argument('--gamma_generator', type=float, default=1, help='Gamma for learning rate scheduler for generator')
-    parser.add_argument('--gamma_predictor', type=float, default=0.99996, help='Gamma for learning rate scheduler for predictor')
-    parser.add_argument('--nits', type=int, default=40000, help='Number of training iterations')
-    parser.add_argument('--nits_mini_loop_predictor', type=int, default=1, help='Number of mini loops for predictor')
-    parser.add_argument('--generator', type=str, default='MLP', help='Type of generator to use')
-    parser.add_argument('--nits_mini_loop_generator', type=int, default=1, help='Number of mini loops for generator')
-    parser.add_argument('--numbr_latend_samples', type=int, default=50, help='Number of latent samples')
-    parser.add_argument('--sinkhorn_max_iterations', type=int, default=10, help='Max iterations for Sinkhorn algorithm')
-    parser.add_argument('--sinkhorn_epsilon', type=float, default=1e-2, help='Epsilon for Sinkhorn algorithm')
-    parser.add_argument('--batch_size', type=int, default=64, help='Batch size')
-    parser.add_argument('--lr_gen', type=float, default=0.001, help='Learning rate for generator')
+    parser.add_argument('--dust_const', type=float, default=1e-6, help='Dust constant')
+    parser.add_argument('--dust', type=float, default=1e-4, help='Dust value')
+
+    # Optimization & Training
+    parser.add_argument('--lr_gen', type=float, default=0.01, help='Learning rate for generator')
     parser.add_argument('--lr_pred', type=float, default=1e-4, help='Learning rate for predictor')
-    parser.add_argument('--model', type=str, default='FNO', help='Model type to use')
-    parser.add_argument('--grf', type=bool, default=True, help='Use Gaussian Random Field')
-    parser.add_argument('--random_shapes', type=bool, default=False, help='Use random shapes')
-    parser.add_argument('--data_28_64', type=bool, default=False, help='Use both 28x28 and 64x64 data')
-    parser.add_argument('--grid', type=bool, default=True, help='Use grid features')
-    parser.add_argument('--sobel', type=bool, default=False, help='Use Sobel features')
-    parser.add_argument('--use_data', type=bool, default=False, help='Use additional training data')
-    parser.add_argument('--wandb', type=bool, default=False, help='Use wandb')
+    parser.add_argument('--gamma_generator', type=float, default=0.99996, help='Gamma for generator LR scheduler')
+    parser.add_argument('--gamma_predictor', type=float, default=0.99996, help='Gamma for predictor LR scheduler')
+    parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
+    parser.add_argument('--nits', type=int, default=400, help='Number of training iterations')
+    parser.add_argument('--nits_mini_loop_generator', type=int, default=1, help='Number of mini loops for generator')
+    parser.add_argument('--nits_mini_loop_predictor', type=int, default=1, help='Number of mini loops for predictor')
+
+    # Sinkhorn Algorithm Parameters
+    parser.add_argument('--sinkhorn_max_iterations', type=int, default=50, help='Max iterations for Sinkhorn algorithm')
+    parser.add_argument('--sinkhorn_epsilon', type=float, default=1e-2, help='Epsilon for Sinkhorn algorithm')
+
+    # Data Settings
+    parser.add_argument('--use_data', type=bool, default=False, help='Use additional data during training')
 
     return parser.parse_args()
-
 
 def neural_operator_input_channel(args):
     if args.sobel:    

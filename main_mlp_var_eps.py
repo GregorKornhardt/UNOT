@@ -4,36 +4,50 @@ import os
 import argparse
 import wandb
 
-import src.train.train as train
+import src.train.train_mlp_var_eps as train
 import src.ot.cost_matrix as cost
 from src.networks.generator  import Generator_Var_Eps
 from src.networks.mlp import Predictor_Var_Eps
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Training script for optimal transport")
+
+    # Experiment & General Settings
     parser.add_argument('--name', type=str, default='eps=1e-2', help='Experiment name')
-    parser.add_argument('--length-latent', type=int, default=10, help='Length of latent space')
+    parser.add_argument('--dtype', type=str, default='float32', help='Data type')
+    parser.add_argument('--wandb', type=bool, default=False, help='Use wandb for logging')
+
+    # Data & Model Dimensions
     parser.add_argument('--length', type=int, default=28, help='Length of input data')
-    parser.add_argument('--dust-const', type=float, default=1e-6, help='Dust constant')
-    parser.add_argument('--dust', type=float, default=1e-4, help='Dust value')
+    parser.add_argument('--length-latent', type=int, default=10, help='Length of latent space')
+    parser.add_argument('--numbr-rand-sample', type=int, default=2, help='Number of random epsilon per batch, for given x it will be 2^x.')
+
+    # Network Architecture
     parser.add_argument('--num-layers', type=int, default=3, help='Number of layers in networks')
-    parser.add_argument('--skip-connection', type=float, default=1, help='Skip connection value in Generator')
+    parser.add_argument('--skip_connection', type=float, default=1, help='Skip connection value in Generator')
     parser.add_argument('--width-generator', type=float, default=4, help='Width of generator network, as multiple of data length')
     parser.add_argument('--width-predictor', type=float, default=4, help='Width of predictor network, as multiple of data length')
+
+    # Regularization & Weight Decay
     parser.add_argument('--weight-decay-generator', type=float, default=0, help='Weight decay for generator')
     parser.add_argument('--weight-decay-predictor', type=float, default=1e-4, help='Weight decay for predictor')
-    parser.add_argument('--dtype', type=str, default='float32', help='Data type')
+    parser.add_argument('--dust-const', type=float, default=1e-6, help='Dust constant')
+    parser.add_argument('--dust', type=float, default=1e-4, help='Dust value')
+
+    # Optimization & Training
+    parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--gamma-generator', type=float, default=1.0, help='Gamma for generator learning rate scheduler')
     parser.add_argument('--gamma-predictor', type=float, default=0.99996, help='Gamma for predictor learning rate scheduler')
+    parser.add_argument('--batch-size', type=int, default=256, help='Batch size')
     parser.add_argument('--nits', type=int, default=10000, help='Number of training iterations')
-    parser.add_argument('--nits-mini-loop-predictor', type=int, default=1, help='Number of mini loops for predictor')
     parser.add_argument('--nits-mini-loop-generator', type=int, default=1, help='Number of mini loops for generator')
+    parser.add_argument('--nits-mini-loop-predictor', type=int, default=1, help='Number of mini loops for predictor')
+
+    # Sinkhorn Algorithm Parameters
     parser.add_argument('--sinkhorn-max-iterations', type=int, default=5, help='Max iterations for Sinkhorn algorithm')
     parser.add_argument('--sinkhorn-epsilon', type=float, default=1e-2, help='Epsilon for Sinkhorn algorithm')
-    parser.add_argument('--batch-size', type=int, default=256, help='Batch size')
-    parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
-    parser.add_argument('--wandb', type=bool, default=False, help='Use wandb')
-    
+
     return parser.parse_args()
     
 
@@ -115,7 +129,7 @@ def main():
                                 multiplicative_factor_predictor = args.gamma_predictor,
                                 numbr_training_iterations = args.nits,
                                 numbr_mini_loop_predictor = args.nits_mini_loop_predictor,
-                                numbr_rand_sample=args.batch_size,
+                                numbr_rand_sample=args.numbr_rand_sample,
                                 length=args.length,
                                 numbr_mini_loop_generator = args.nits_mini_loop_generator,
                                 sinkhorn_max_iterations = args.sinkhorn_max_iterations,
