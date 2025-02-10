@@ -1,8 +1,10 @@
-import matplotlib.pyplot as plt
 import torch
 import os
+import sys
 import argparse
 import wandb
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.train.train_mlp_var_eps as train
 import src.ot.cost_matrix as cost

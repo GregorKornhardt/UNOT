@@ -26,7 +26,7 @@ class Predictor_Var_Eps(nn.Module):
             Number of hidden layers.
         """
 
-        super(Predictor_eps, self).__init__()
+        super(Predictor_Var_Eps, self).__init__()
         self.dim = dim
         self.width = width
 
@@ -52,6 +52,7 @@ class Predictor_Var_Eps(nn.Module):
         for layer in self.layers:
             x = layer(x)
         return x
+
 
 class Predictor(nn.Module):
 

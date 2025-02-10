@@ -24,12 +24,7 @@ import src.utils.data_functions as df
 import src.evaluation.plot as pa
 import src.ot.sinkhorn as sink
 import src.ot.cost_matrix as cost
-from .import_models import load_fno, load_fno_var_epsilon, load_model
-
-def apply_predictor(predictor, mu, nu):
-    length = int(math.isqrt(mu.shape[-1]))
-    input = torch.cat((mu.reshape(-1,1,length,length), nu.reshape(-1,1,length,length)), 1).reshape(-1, 2, length, length)
-    return predictor(input).reshape(-1, length*length)
+from .import_models import load_fno, load_fno_var_epsilon, load_mlp
 
 
 def set_evaluation(
@@ -59,7 +54,7 @@ def set_evaluation(
     u0_gauss = [get_gauss_init(geom, mu_jnp[i], nu_jnp[i]) for i in range(number_samples)]
     u0_gauss = torch.stack(u0_gauss).to(set_mu.device)
 
-    v_0 = torch.exp(apply_predictor(predictor, set_mu, set_nu)).reshape(-1, length*length)
+    v_0 = torch.exp(predictor(set_mu, set_nu)).reshape(-1, length*length)
 
     with torch.no_grad():
         relative_error_dim = None#relative_error_over_dimension(set_mu, set_nu, predictor, epsilon, 10, 64)
@@ -138,7 +133,7 @@ def relative_error_over_dimension(
         ones  = torch.ones_like(set_mu)
         geom = get_geom(length, epsilon)
 
-        v_0 = torch.exp(apply_predictor(predictor, set_mu, set_nu)).reshape(-1, length*length)
+        v_0 = torch.exp(predictor(set_mu, set_nu)).reshape(-1, length*length)
         mu_jnp = jnp.array(set_mu.cpu().numpy())
         nu_jnp = jnp.array(set_nu.cpu().numpy())
         u0_gauss = [get_gauss_init(geom, mu_jnp[i], nu_jnp[i]) for i in range(number_samples)]
@@ -160,6 +155,45 @@ def relative_error_over_dimension(
     return dict_relative_error
 
 
+def relative_error_over_dimension_eps(
+        set_mu: torch.Tensor,
+        set_nu: torch.Tensor,
+        predictor,
+        epsilon_min: float = 1e-2,
+        epsilon_max: float = 1,
+        num_epsilons: int = 10,
+        min_len: int = 10,
+        max_len: int = 64
+        ):
+    original_set_mu = set_mu   
+    original_set_nu = set_nu
+    original_len = int(math.isqrt(set_mu.shape[-1]))
+    number_samples = set_mu.shape[0]
+    epsilon = torch.logspace(math.log10(epsilon_min), math.log10(epsilon_max), num_epsilons)
+
+    average = torch.zeros(max_len-min_len, num_epsilons)
+
+    for i, len in tqdm(enumerate(range(min_len, max_len,1))):
+        set_mu = df.preprocessor(original_set_mu.reshape(-1, original_len, original_len), len, 1e-6).to(original_set_mu.device)
+        set_nu = df.preprocessor(original_set_nu.reshape(-1, original_len, original_len), len, 1e-6).to(original_set_nu.device)        
+        cost_matrix = cost.fast_get_cost_matrix(len, device=original_set_mu.device)
+        ones  = torch.ones_like(set_mu)
+        for j, eps in enumerate(epsilon):
+            mu_0 = torch.exp(predictor(set_mu, set_nu, eps)).reshape(-1, len*len)
+        
+            with torch.no_grad():
+                _,_,distance_1000_step = sink.sink_vec_dist(set_mu, set_nu, cost_matrix, eps, ones,1000)
+                _,_,distance_predicted = sink.sink_vec_dist(set_mu, set_nu, cost_matrix, eps, mu_0,1)#sink_vec_dist_half(set_mu, set_nu, cost_matrix, eps, mu_0,1)
+            
+            relat_er = torch.nanmean(torch.abs(distance_predicted - distance_1000_step)/distance_1000_step)
+            if not torch.isnan(relat_er):
+                average[i,j] = relat_er
+            else:
+                print("Error in relative error calculation!!!!")
+    
+    return average
+
+
 def set_ot_distance(
         set_mu: torch.Tensor,
         set_nu: torch.Tensor,
@@ -177,7 +211,6 @@ def set_ot_distance(
             v_0 = torch.exp(predictor(set_mu[i : i+1], set_nu[i : i+1])).flatten()
 
             _,_,distance_1000_step = sinkhorn(set_mu, set_nu, cost_matrix, epsilon, ones,1000)
-
             _,_,_,distance_ones = sinkhorn(set_mu, set_nu, cost_matrix, epsilon, ones,1)
             _,_,_,distance_predicted = sinkhorn(set_mu, set_nu, cost_matrix, epsilon, v_0,1)
 
@@ -481,15 +514,14 @@ def sinkhorn_computation_predictor(
     relativ_error = []
     
     length = int(math.isqrt(set_mu.shape[-1]))
-    input = torch.cat((set_mu.reshape(-1,1,length,length), set_nu.reshape(-1,1,length,length)), 1).reshape(-1, 2, length, length)
 
     with torch.no_grad():
         #predictor = torch.compile(predictor)    
-        V = predictor(input).reshape(-1, length*length).reshape(-1, length*length)
+        V = predictor(set_mu, set_nu)
 
         start_time = time.time()
         
-        V = torch.exp(predictor(input).reshape(-1, length*length)).reshape(-1, length*length)
+        V = torch.exp(predictor(set_mu, set_nu).reshape(-1, length*length)).reshape(-1, length*length)
     for _ in range(100):
         U = set_mu / (K @ V.T).T
         V = set_nu / (K.T @ U.T).T
@@ -722,8 +754,14 @@ def sink_vec_dist_gauss(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
     return U, V, dist
 
 
-def test_neural_operator(model, number_of_samples, device):
-    predictor = load_fno(model, device=device)
+def test_neural_operator(args, device):
+    predictor = load_fno(
+        args.model,
+        args.modes,
+        args.width,
+        args.activation,
+        args.grid,
+        device=device)
 
     sinkhorn = sink.sink_vec_dist
     approximation = {}
@@ -757,7 +795,7 @@ def test_neural_operator(model, number_of_samples, device):
     
     for data1, data2 in datasets_28:
         key = data1 if data1 == data2 else f'{data1}-{data2}'
-        results = evaluate_dataset_pair(data1, data2, 28, number_of_samples, device, predictor, sinkhorn, cost_matrix_28)
+        results = evaluate_dataset_pair(data1, data2, 28, args.number_of_samples, device, predictor, sinkhorn, cost_matrix_28)
         
         approximation[key] = results[0]
         time[key] = results[1] 
@@ -777,7 +815,7 @@ def test_neural_operator(model, number_of_samples, device):
     
     for data1, data2 in datasets_64:
         key = data1 if data1 == data2 else f'{data1}-{data2}'
-        results = evaluate_dataset_pair(data1, data2, 64, number_of_samples, device, predictor, sinkhorn, cost_matrix_64)
+        results = evaluate_dataset_pair(data1, data2, 64, args.number_of_samples, device, predictor, sinkhorn, cost_matrix_64)
         
         approximation[key] = results[0]
         time[key] = results[1]
@@ -787,33 +825,40 @@ def test_neural_operator(model, number_of_samples, device):
         print(f"Finished {key}")
 
         data_set = ['mnist', 'cifar', 'bear', 'lfw', 'facialexpression', 'car']
+    
     for i,data1 in enumerate(data_set):
         set_error_dim[data1] = {}
 
         for data2 in data_set[:i+1]:
-            set_mu, set_nu = df.random_set_measures(data1, data2, number_of_samples, 64)
+            set_mu, set_nu = df.random_set_measures(data1, data2, args.number_of_samples, 64)
             error = relative_error_over_dimension(set_mu.to(device), set_nu.to(device), predictor, 0.01, 10, 64)
             set_error_dim[data1][data2] = error   
     
-    pa.plot_error_dim_matrix(data_set, set_error_dim, model)
+    pa.plot_error_dim_matrix(data_set, set_error_dim, args.model)
     
     
     compelte_dict = {'approximation': approximation, 'marginal_constraint': mcv, 'time': time, 'error_iter': error_iter, 'iteration': iter, 'dim':(data_set, set_error_dim)}
-    torch.save(compelte_dict, f'approximation_runtime_{model}.pt')
+    
+    os.makedirs('experiments', exist_ok=True)
+    torch.save(compelte_dict, f'experiments/approximation_NO_{args.model}.pt')
 
     #print(set_time)
-    pa.plot_approximation(approximation, model)
-    pa.plot_marginal_constraint(mcv, model)
-    pa.plot_time(time, model)
-    pa.plot_error_over_iter(error_iter, model)
+    pa.plot_approximation(approximation, args.model)
+    pa.plot_marginal_constraint(mcv, args.model)
+    pa.plot_time(time, args.model)
+    pa.plot_error_over_iter(error_iter, args.model)
     
     print("Saved the results in the experiments folder.")
 
 
-def test_neural_operator_var_eps(model, number_of_samples, device):
-    predictor = load_fno_var_epsilon(model, device=device)
-
-    sinkhorn = sink.sink_vec_dist
+def test_neural_operator_var_eps(args, device):
+    predictor = load_fno_var_epsilon(
+        args.model, 
+        args.modes,
+        args.width,
+        args.activation,
+        args.grid,
+        device)
     
     data_set = ['mnist', 'cifar', 'bear', 'lfw', 'facialexpression', 'car']
     set_error_dim = {}
@@ -821,20 +866,124 @@ def test_neural_operator_var_eps(model, number_of_samples, device):
         set_error_dim[data1] = {}
 
         for data2 in tqdm(data_set[:i+1], desc=f"Inner loop {data1}"):
-            set_mu, set_nu = df.random_set_measures(data1, data2, number_of_samples, 64)
-            error = relative_error_over_dimension(set_mu.to(device), set_nu.to(device), predictor, min_len=10, max_len=70, num_epsilons=40)
+            set_mu, set_nu = df.random_set_measures(data1, data2, args.number_of_samples, 64)
+            error = relative_error_over_dimension_eps(set_mu.to(device), set_nu.to(device), predictor, min_len=10, max_len=70, num_epsilons=40)
             set_error_dim[data1][data2] = error
             print(f"Error between {data1} and {data2} is finished.")
 
-    torch.save(set_error_dim, f'experiments/approximation_var_epsilon_{model}_{number_of_samples}.pt')
+    torch.save(set_error_dim, f'experiments/approximation_NO_var_epsilon_{args.model}_{args.number_of_samples}.pt')
     pa.plot_error_dim_eps_matrix(data_set, set_error_dim,)
 
-def main():
-    parser = argparse.ArgumentParser(description='Barycenter between two measures.')
+
+def test_mlp(args, device):
+    predictor = load_fno(
+        args.model,
+        args.modes,
+        args.width,
+        args.activation,
+        args.grid,
+        device=device)
+
+    sinkhorn = sink.sink_vec_dist
+    approximation = {}
+    time = {}
+    mcv = {}
+    error_iter = {} 
+    iter = {}
+    set_error_dim = {}
+    
+    def evaluate_dataset_pair(data1, data2, dim, number_of_samples, device, predictor, sinkhorn, cost_matrix):
+        set_mu, set_nu = df.random_set_measures(data1, data2, number_of_samples, dim)
+        results = set_evaluation(
+            set_mu.to(device), 
+            set_nu.to(device), 
+            cost_matrix, 
+            sinkhorn, 
+            predictor, 
+            0.01, 
+            length=dim
+        )
+        return results
+
+    # Process 28x28 datasets
+    datasets = [
+        ('mnist', 'mnist'),
+        ('cifar', 'cifar'),
+        ('mnist', 'cifar')
+    ]
+    
+    cost_matrix = cost.get_cost_matrix(args.dimension, device=device)
+    
+    for data1, data2 in datasets:
+        key = data1 if data1 == data2 else f'{data1}-{data2}'
+        results = evaluate_dataset_pair(data1, data2, args.dimension, args.number_of_samples, device, predictor, sinkhorn, cost_matrix)
+        
+        approximation[key] = results[0]
+        time[key] = results[1] 
+        iter[key] = results[2]
+        mcv[key] = results[3]
+        error_iter[key] = results[4]
+        print(f"Finished {key}")
+
+    # Process 64x64 datasets
+    datasets = [
+        ('lfw', 'lfw'),
+        ('bear', 'bear'),
+        ('lfw', 'bear')
+    ]
+        
+    for data1, data2 in datasets:
+        key = data1 if data1 == data2 else f'{data1}-{data2}'
+        results = evaluate_dataset_pair(data1, data2, args.dimension, args.number_of_samples, device, predictor, sinkhorn, cost_matrix)
+        
+        approximation[key] = results[0]
+        time[key] = results[1]
+        iter[key] = results[2] 
+        mcv[key] = results[3]
+        error_iter[key] = results[4]
+        print(f"Finished {key}")
+
+        data_set = ['mnist', 'cifar', 'bear', 'lfw', 'facialexpression', 'car']
+    
+    
+    compelte_dict = {'approximation': approximation, 'marginal_constraint': mcv, 'time': time, 'error_iter': error_iter, 'iteration': iter, 'dim':(data_set, set_error_dim)}
+    
+    os.makedirs('experiments', exist_ok=True)
+    torch.save(compelte_dict, f'experiments/approximation_MLP_{args.model}.pt')
+
+    #print(set_time)
+    pa.plot_approximation(approximation, args.model)
+    pa.plot_marginal_constraint(mcv, args.model)
+    pa.plot_time(time, args.model)
+    pa.plot_error_over_iter(error_iter, args.model)
+    
+    print("Saved the results in the experiments folder.")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Run the evaluation of the UNOT/MLP model.')
     parser.add_argument('--number-of-samples', type=int, default=500, help='Number of samples in the measures.')
     parser.add_argument('--model', type=str, default='predictor_28_v2', help='Name of the model to use.')
     parser.add_argument('--network', type=str, default='NO', help='Name of the network to use.')
+
+    # Neural Operator arguments
+    parser.add_argument('--in-channels', type=int, default=2, help='Number of input channels')
+    parser.add_argument('--modes', type=int, nargs=2, default=[10, 10], help='Modes for Fourier layers')
+    parser.add_argument('--width', type=int, default=64, help='Width of the network')
+    parser.add_argument('--activation', type=str, default='gelu', help='Activation function')
+    parser.add_argument('--grid', action='store_true', help='Whether to use grid')
+
+    # MLP arguments
+    parser.add_argument('--dimension', type=int, default=28, help='Dimension of input')
+    parser.add_argument('--width-predictor', type=int, default=4, help='Width of MLP predictor')
+    parser.add_argument('--num-layers', type=int, default=3, help='Number of layers in MLP')
+
     args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
     
     os.makedirs('Images', exist_ok=True)
     if torch.cuda.is_available(): device = torch.device("cuda")
@@ -842,9 +991,11 @@ def main():
     else: device = torch.device("cpu")
 
     if args.network == 'NO':
-        test_neural_operator(args.model, args.number_of_samples, device)
+        test_neural_operator(args, device)
     elif args.network == 'NO_var_eps':
-        test_neural_operator_var_eps(args.model, args.number_of_samples, device)
+        test_neural_operator_var_eps(args, device)
+    elif args.network == 'MLP':
+        test_mlp(args, device)
     
 
 if __name__ == "__main__":
