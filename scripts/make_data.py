@@ -9,7 +9,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.utils.data_functions import get_mnist, get_cifar, get_lfw, get_quickdraw, get_quickdraw_multi
+from src.utils.data_functions import get_mnist, get_cifar, get_lfw, get_quickdraw, get_quickdraw_multi, get_facial_expression
 
 n_samples = 10000
 data_path = './data'
@@ -43,3 +43,9 @@ root_np = data_path + '/quickdraw'
 path_quickdraw = data_path + '/quickdraw.pt'
 n_classes = 8
 get_quickdraw_multi(n_samples, n_classes, root_np, path_quickdraw)
+
+# facialexpression
+root_np = data_path + '/quickdraw'
+path_facialexpression = data_path + '/facialexpression.pt'
+class_name = 'facialexpression'
+get_facial_expression(n_samples, path_facialexpression)
