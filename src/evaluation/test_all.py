@@ -581,7 +581,10 @@ def sinkhorn_computation_time_gauss(
 
 
 
-def get_geom(n : int, eps : float) -> Geometry:
+def get_geom(
+        n : int, 
+        eps : float
+    ) -> Geometry:
 
     """
     Get a geometry object for the optimal transport problem on a 2D grid.
@@ -607,7 +610,11 @@ def get_geom(n : int, eps : float) -> Geometry:
     return geom
 
 
-def get_gauss_init(geom : Geometry, mu : jnp.ndarray, nu : jnp.ndarray) -> jnp.ndarray:
+def get_gauss_init(
+        geom : Geometry, 
+        mu : jnp.ndarray, 
+        nu : jnp.ndarray
+    ) -> jnp.ndarray:
     """
     Get a Gaussian initialisation for the dual vector v.
 
@@ -635,86 +642,14 @@ def get_gauss_init(geom : Geometry, mu : jnp.ndarray, nu : jnp.ndarray) -> jnp.n
     return torch.tensor(np.array(u))
 
 
-def sink_vec_dist_half(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
-             eps : float, V0 : torch.Tensor, n_iters : int) -> torch.Tensor:
-    """
-    A vectorized version of the Sinkhorn algorithm to create scaling factors
-    to be used for generating targets.
-
-    Parameters
-    ----------
-    MU : (n_samples, dim) torch.Tensor
-        First probability distributions.
-    NU : (n_samples, dim) torch.Tensor
-        Second probability distributions.
-    C : (dim, dim) torch.Tensor
-        Cost matrix.
-    eps : float
-        Regularization parameter.
-    V0 : (n_samples, dim) torch.Tensor
-        Initial guess for scaling factors V.
-    n_iters : int
-        Maximum number of iterations.
-
-    Returns
-    -------
-    U : (n_samples, dim) torch.Tensor
-        1st Scaling factor.
-    V : (n_samples, dim) torch.Tensor
-        2nd Scaling factor.
-    """
-    K = torch.exp(-C/eps)
-    V = V0
-      
-    U = MU / (K @ V.T).T
-  
-    D = K * C  # Größe: [i, j]
-    dist = torch.einsum('si,ij,sj->s', U, D, V)  # Größe: [s]
-    return U, V, dist
-
-
-def sink_vec_dist_half_gauss(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
-             eps : float, U0 : torch.Tensor, n_iters : int) -> torch.Tensor:
-    """
-    A vectorized version of the Sinkhorn algorithm to create scaling factors
-    to be used for generating targets.
-
-    Parameters
-    ----------
-    MU : (n_samples, dim) torch.Tensor
-        First probability distributions.
-    NU : (n_samples, dim) torch.Tensor
-        Second probability distributions.
-    C : (dim, dim) torch.Tensor
-        Cost matrix.
-    eps : float
-        Regularization parameter.
-    V0 : (n_samples, dim) torch.Tensor
-        Initial guess for scaling factors V.
-    n_iters : int
-        Maximum number of iterations.
-
-    Returns
-    -------
-    U : (n_samples, dim) torch.Tensor
-        1st Scaling factor.
-    V : (n_samples, dim) torch.Tensor
-        2nd Scaling factor.
-    dim: (n_samples) torch.Tensor
-        Distance.
-    """
-    K = torch.exp(-C/eps)
-    U = U0
-
-    V = NU / (K.T @ U.T).T
-  
-    D = K * C  # Größe: [i, j]
-    dist = torch.einsum('si,ij,sj->s', U, D, V)  # Größe: [s]
-    return U, V, dist
-
-
-def sink_vec_dist_gauss(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
-             eps : float, U0 : torch.Tensor, n_iters : int) -> torch.Tensor:
+def sink_vec_dist_gauss(
+        MU : torch.Tensor, 
+        NU : torch.Tensor, 
+        C : torch.Tensor,
+        eps : float, 
+        U0 : torch.Tensor, 
+        n_iters : int
+    ) -> torch.Tensor:
     """
     A vectorized version of the Sinkhorn algorithm to create scaling factors
     to be used for generating targets.
@@ -754,7 +689,10 @@ def sink_vec_dist_gauss(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
     return U, V, dist
 
 
-def test_neural_operator(args, device):
+def test_neural_operator(
+        args, 
+        device
+    ):
     predictor = load_fno(
         args.model,
         args.modes,
@@ -851,7 +789,10 @@ def test_neural_operator(args, device):
     print("Saved the results in the experiments folder.")
 
 
-def test_neural_operator_var_eps(args, device):
+def test_neural_operator_var_eps(
+        args, 
+        device
+    ):
     predictor = load_fno_var_epsilon(
         args.model, 
         args.modes,
@@ -875,7 +816,10 @@ def test_neural_operator_var_eps(args, device):
     pa.plot_error_dim_eps_matrix(data_set, set_error_dim,)
 
 
-def test_mlp(args, device):
+def test_mlp(
+        args, 
+        device
+    ):
     predictor = load_fno(
         args.model,
         args.modes,

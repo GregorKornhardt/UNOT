@@ -145,7 +145,12 @@ class Training():
         return
     
 
-    def target_sinkhorn(self, mu, nu, epsilon):
+    def target_sinkhorn(
+            self, 
+            mu, 
+            nu, 
+            epsilon
+        ):
         with torch.no_grad():
             # Bootstrap the empirical measures
             nu0 = torch.exp(self.predictor(mu, nu, epsilon))

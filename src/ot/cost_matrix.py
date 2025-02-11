@@ -30,7 +30,11 @@ def get_point_cloud(n : int) -> np.ndarray:
 
     return cloud
 
-def get_cost_matrix(n : int, device=torch.device("cpu"), dytpe=torch.float32) -> torch.Tensor:
+def get_cost_matrix(
+        n : int, 
+        device=torch.device("cpu"), 
+        dytpe=torch.float32
+    ) -> torch.Tensor:
     """
     Generate a square euclidean cost matrix on 2D unit length grid with n points
     per dimension.
@@ -57,7 +61,10 @@ def get_cost_matrix(n : int, device=torch.device("cpu"), dytpe=torch.float32) ->
     C = torch.tensor(np.linalg.norm(a - b, axis=1) ** 2).reshape(n**2, n**2)
     return C.type(dytpe).to(device)
 
-def fast_get_cost_matrix(n:int, device=torch.device('cpu')) -> torch.tensor:
+def fast_get_cost_matrix(
+        n:int, 
+        device=torch.device('cpu')
+    ) -> torch.tensor:
     """
     Fast Version for square euclidean cost matrix on 2D unit length grid with n points
     per dimension.

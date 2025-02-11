@@ -86,7 +86,11 @@ class Training():
         return
 
 
-    def mini_loop(self, mu, nu):
+    def mini_loop(
+            self, 
+            mu, 
+            nu
+        ):
         self.predictor_optimizer.zero_grad()
 
         # calculate the target from the sinkhorn algorithm
@@ -134,7 +138,11 @@ class Training():
         return
     
 
-    def target_sinkhorn(self, mu, nu):
+    def target_sinkhorn(
+            self, 
+            mu, 
+            nu
+        ):
         with torch.no_grad():
             # Bootstrap the empirical measures
             nu0 = torch.exp(self.predictor(mu, nu))

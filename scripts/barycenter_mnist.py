@@ -1,54 +1,29 @@
+"""
+barycenter_mnist.py
+-------------------
+
+Compare the barycenter of different digits using our method and the true barycenter.
+"""
 import torch
 import ot
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import argparse
+import os 
+import sys 
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.evaluation.import_models as im
 import src.utils.data_functions as df
 import src.ot.cost_matrix  as cost
+from src.evaluation.barycenter import barycenter
 
-
-
-def barycenter(predictor, MUs, cost_matrix, weights=None, nits = 100):
-    v0 = torch.ones(MUs.shape[1],requires_grad = (True), device = MUs.device)
-
-
-    softmax = torch.nn.Softmax(1)
-    opt = torch.optim.Adam([v0], lr=0.1)
-    loss = 0
-    K = torch.exp(-cost_matrix/0.01)
-    for k in tqdm(range(nits)):
-        
-        opt.zero_grad()
-        v = predictor(softmax(v0.unsqueeze(0)), softmax(v0.unsqueeze(0)))
-        v = torch.exp(v)
-        for _ in range(1):
-            u = softmax(v0.unsqueeze(0)) / (K @ v.squeeze())
-            v = softmax(v0.unsqueeze(0)) / (K.T @ u.squeeze())
-        f_mu = torch.log(v) * 0.01
-        loss = 0
-        for mu in MUs:
-            v = predictor(mu.unsqueeze(0), softmax(v0.unsqueeze(0)))
-            v = torch.exp(v)
-            for _ in range(1):
-                u = mu / (K @ v.squeeze())
-                v = softmax(v0.unsqueeze(0)) / (K.T @ u.squeeze())
-            f = torch.log(u) * 0.01
-            g = torch.log(v) * 0.01
-
-            if v0.grad is not None:
-                v0.grad += g.flatten() - f_mu.flatten()
-            else:
-                v0.grad = g.flatten() - f_mu.flatten()
-            
-       
-        opt.step()
-        mnist_barycenter = softmax(v0.unsqueeze(0)).detach().cpu().numpy()
-    return mnist_barycenter
-
-
-def plot_geodesics(predictor, dimension, device):
+def plot_barycenter(
+        predictor, 
+        dimension, 
+        device
+    ):
     with torch.no_grad():
         mnist = torch.load('data/mnist.pt')
 
@@ -106,7 +81,7 @@ def plot_geodesics(predictor, dimension, device):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Barycenter shapes')
-    parser.add_argument('--model', type=str, default='FNO', help='Model to use')
+    parser.add_argument('--model', type=str, default='UNOT', help='Model to use')
     parser.add_argument('--dimension', type=int, default=64, help='Dimension of the images')
     return parser.parse_args()
 
@@ -118,7 +93,7 @@ def main():
 
     args = parse_args()
     predictor = im.load_fno(args.model, device=device)
-    plot_geodesics(predictor, 64, device)
+    plot_barycenter(predictor, 64, device)
 
 
 if __name__=='__main__':

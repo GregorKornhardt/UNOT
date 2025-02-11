@@ -139,7 +139,12 @@ class Training():
 
 
 
-    def mini_loop_predictor(self, mu, nu, dim):
+    def mini_loop_predictor(
+            self, 
+            mu, 
+            nu, 
+            dim
+        ):
         self.predictor_optimizer.zero_grad()
 
         # convert the images to the correct dimension
@@ -171,7 +176,10 @@ class Training():
         return
 
 
-    def mini_loop_generator(self, z):
+    def mini_loop_generator(
+            self, 
+            z
+        ):
         # update the generator
         self.generator_optimizer.zero_grad()
         mu, nu = self.apply_generator(z, self.generator)
@@ -201,7 +209,12 @@ class Training():
         return  
 
 
-    def mini_loop_predictor_data(self, mu, nu, true):
+    def mini_loop_predictor_data(
+            self, 
+            mu, 
+            nu, 
+            true
+        ):
         self.predictor_optimizer.zero_grad()
 
         pred = self.apply_predictor(mu, nu)
@@ -215,7 +228,11 @@ class Training():
         return
     
     
-    def convert_image(self, img: torch.Tensor, k: int) -> torch.Tensor:
+    def convert_image(
+            self, 
+            img: torch.Tensor, 
+            k: int
+        ) -> torch.Tensor:
         # img-Form: (Batch, Channels, n, n)
         img = img.reshape(-1,1,self.length,self.length)
         img_int = F.interpolate(img, size=(k, k), mode='bilinear', align_corners=False).reshape(-1, k**2)
@@ -265,7 +282,10 @@ class Training():
         return
 
     
-    def apply_sobel_filter(self,mu):
+    def apply_sobel_filter(
+            self,
+            mu
+        ):
         sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
         sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
         sobel_x = sobel_x.to(mu.device)
@@ -278,7 +298,11 @@ class Training():
         return sobel_filtered_mu
     
     
-    def apply_predictor(self, mu, nu):
+    def apply_predictor(
+            self, 
+            mu, 
+            nu
+        ):
         length = int(math.isqrt(mu.shape[-1]))
         if self.sobel:
             mu_s = self.apply_sobel_filter(mu.reshape(-1, length, length))
@@ -293,14 +317,21 @@ class Training():
         return self.predictor(input.float()).reshape(-1, length*length)
     
 
-    def get_grid(self, length):
+    def get_grid(
+            self, 
+            length
+        ):
         x = torch.linspace(0, 1, length)
         y = torch.linspace(0, 1, length)
         grid = torch.stack(torch.meshgrid(x, y)).to(self.device)
         return grid
     
 
-    def apply_generator(self, z, generator):
+    def apply_generator(
+            self, 
+            z, 
+            generator
+        ):
         if self.which_gen == 'FNO':
             length = int(math.isqrt(z.shape[-1]))
             z = z.reshape(-1, 2, length, length)
@@ -323,7 +354,12 @@ class Training():
         return mu, nu
 
 
-    def target_sinkhorn(self, mu, nu, cost_matrix):
+    def target_sinkhorn(
+            self, 
+            mu, 
+            nu, 
+            cost_matrix
+        ):
         with torch.no_grad():
             # Bootstrap the empirical measures
             nu0 = torch.exp(self.apply_predictor(mu, nu))
@@ -334,7 +370,10 @@ class Training():
         return g, ~(torch.isnan(v).any(dim=1)).to(self.device)
 
 
-    def get_cost_matrix(self, dim):
+    def get_cost_matrix(
+            self, 
+            dim
+        ):
         length = int(math.isqrt(dim))
         if length == 28:
             return self.cost_matrix_28
@@ -342,7 +381,10 @@ class Training():
             return self.cost_matrix_64
         
 
-    def checkpoint(self, i):
+    def checkpoint(
+            self, 
+            i
+        ):
         if i % 10 == 0:
             self.test_performance()
 
@@ -354,7 +396,10 @@ class Training():
             torch.save(self.predictor.state_dict(), f'{self.path}/Models/fno_model_save_{self.name}_{i}.pt')
                 
 
-    def test_performance(self, print_output=False):
+    def test_performance(
+            self, 
+            print_output=False
+        ):
         if self.test_data_28 is None:
             return            
         total_loss = []    
