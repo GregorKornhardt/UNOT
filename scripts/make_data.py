@@ -18,9 +18,9 @@ data_path = './data'
 path_mnist = data_path + '/mnist.pt'
 get_mnist(n_samples, path_mnist)
 
-"""# lfw
+# lfw
 path_lfw = data_path + '/lfw.pt'
-get_lfw(n_samples, path_lfw)"""
+get_lfw(n_samples, path_lfw)
 
 # cifar
 path_cifar = data_path + '/cifar.pt'
