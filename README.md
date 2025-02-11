@@ -15,14 +15,14 @@ suffices). To use the pretrained FNO (Fourier Neural Operator), simply run
 ```python
 from src.evaluation.import_models import load_fno
 
-model = load_fno("Models/unot_fno.pt")
+model = load_fno("unot_fno.pt")
 ```
 
 To use the FNO trained on variable $\epsilon$, you can load the model as follows:
 ```python
 from src.evaluation.import_models import load_fno_var_epsilon
 
-model = load_fno("Models/unot_fno_var_eps.pt")
+model = load_fno("unot_fno_var_eps.pt")
 ```
 
 
