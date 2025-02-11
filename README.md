@@ -55,9 +55,6 @@ MLP instead of an FNO, which only accepts fixed size inputs, but can be trained 
 minutes.
 
 
-## 
-
-
 ## Citation
 If you find this repository helpful, please consider citing our paper:
 
