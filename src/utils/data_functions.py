@@ -13,17 +13,15 @@ import os
 import urllib
 from tqdm import tqdm
 from skimage.draw import random_shapes
+import zipfile
+import requests
+import shutil
+from pathlib import Path
+
 import src.ot.sinkhorn as sinkhorn
 import src.ot.cost_matrix as cost
 import src.utils.gaussian_random_field as grf
 
-from tqdm import tqdm
-import os
-import subprocess
-import zipfile
-from PIL import Image
-import torch
-from torchvision import transforms
 
 
 def test_set_sampler(
@@ -1016,47 +1014,35 @@ def create_data_set_grf(
     torch.save(test_set, f'Data/data_set_grf_dim_{length}_eps_{epsilon}_rand_shapes_{incl_random_shapes}.pt')
 
 def get_facial_expression(n_samples: int, out_path: str) -> None:
+    # Define paths
+    data_dir = Path("data")
+    data_zip = data_dir / "facialexpression.zip"
+    data_pt = data_dir / "facialexpression.pt"
 
-        data_dir = 'data'
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
+    data_dir.mkdir(exist_ok=True)
 
-        zip_path = os.path.join(data_dir, 'facial_expression.zip')
-        # Download the dataset using Kaggle API
-        subprocess.run([
-            'kaggle', 'datasets', 'download', '-d', 'mhantor/facial-expression', '-p', data_dir
-        ], check=True)
+    # Download the ZIP file
+    url = "https://www.kaggle.com/api/v1/datasets/download/mhantor/facial-expression"
+    response = requests.get(url, stream=True)
 
-        # Unzip the file into a subfolder
-        extract_path = os.path.join(data_dir, 'facial_expression')
-        if not os.path.exists(extract_path):
-            os.makedirs(extract_path)
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(extract_path)
+    if response.status_code == 200:
+        with open(data_zip, "wb") as file:
+            shutil.copyfileobj(response.raw, file)
+        print("Download complete.")
+    else:
+        raise Exception(f"Download failed with status code {response.status_code}")
 
-        # Collect image files from the extracted folder
-        image_files = []
-        for root, _, files in os.walk(extract_path):
-            for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
-                    image_files.append(os.path.join(root, file))
+    # Extract the ZIP file
+    with zipfile.ZipFile(data_zip, "r") as zip_ref:
+        zip_ref.extractall(data_dir)
+    print("Extraction complete.")
 
-        image_files = sorted(image_files)
-        if n_samples > len(image_files):
-            n_samples = len(image_files)
-
-        # Define transformation: convert to grayscale, resize, then to tensor
-        transform = transforms.Compose([
-            transforms.Grayscale(),
-            transforms.Resize((48, 48)),
-            transforms.ToTensor()
-        ])
-
-        images = []
-        for file in image_files[:n_samples]:
-            img = Image.open(file)
-            img = transform(img)
-            images.append(img)
-        dataset = torch.stack(images, dim=0)
-
-        torch.save(dataset, out_path)
+    # Load the Facial expression.npy file and save as data.pt
+    npy_file = data_dir / "Facial expression.npy"
+    if npy_file.exists():
+        data_array = np.load(npy_file)
+        data_tensor = torch.tensor(data_array).sum(-1)
+        torch.save(data_tensor, data_pt)
+        print(f"Data saved to {data_pt}")
+    else:
+        raise FileNotFoundError(f"{npy_file} not found in extracted files.")
