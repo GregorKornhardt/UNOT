@@ -23,7 +23,7 @@ def parse_args():
     # Data & Input Settings
     parser.add_argument('--length', type=int, default=64, help='Length of input data')
     parser.add_argument('--length_latent', type=int, default=10, help='Length of latent space')
-    parser.add_argument('--numbr_latend_samples', type=int, default=100, help='Number of latent samples')
+    parser.add_argument('--numbr_latent_samples', type=int, default=100, help='Number of latent samples')
 
     # Generator Architecture
     parser.add_argument('--generator', type=str, default='MLP', help='Generator model type')
@@ -167,7 +167,7 @@ def main():
                             sinkhorn_epsilon = args.sinkhorn_epsilon,
                             cost_matrix_28 = cost_matrix_28,
                             cost_matrix_64=cost_matrix_64,
-                            numbr_latend_samples=args.numbr_latend_samples,
+                            numbr_latent_samples=args.numbr_latent_samples,
                             dust_const=args.dust_const,
                             length = args.length,
                             batch_size = args.batch_size,

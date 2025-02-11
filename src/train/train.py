@@ -27,7 +27,7 @@ class Training():
                 sinkhorn_max_iterations : int,
                 dust_const : float,
                 length : int,
-                numbr_latend_samples : int,
+                numbr_latent_samples : int,
                 sinkhorn_epsilon : float,
                 cost_matrix_28 : torch.Tensor,
                 cost_matrix_64 : torch.Tensor,
@@ -61,7 +61,7 @@ class Training():
         self.sinkhorn_epsilon = sinkhorn_epsilon
         self.cost_matrix_28 = cost_matrix_28
         self.cost_matrix_64 = cost_matrix_64
-        self.numbr_latend_samples = numbr_latend_samples
+        self.numbr_latent_samples = numbr_latent_samples
         self.batch_size = batch_size
         self.use_data = use_data
         self.dim_prior = dim_prior
@@ -106,7 +106,7 @@ class Training():
 
     def train(self):
         for i in tqdm(range(self.numbr_training_iterations)):
-            z = self.latend_samples()
+            z = self.latent_samples()
 
             with torch.no_grad():
                 mu, nu = self.apply_generator(z, self.generator)
@@ -245,11 +245,11 @@ class Training():
         return img_int
 
 
-    def latend_samples(self):
+    def latent_samples(self):
         if self.which_gen == 'FNO':
-            z = self.gaussian_random_samples(self.numbr_latend_samples, self.length)
+            z = self.gaussian_random_samples(self.numbr_latent_samples, self.length)
         else:
-            z = torch.randn(self.numbr_latend_samples, 2 * self.dim_prior, device=self.device)
+            z = torch.randn(self.numbr_latent_samples, 2 * self.dim_prior, device=self.device)
         return z
 
 
