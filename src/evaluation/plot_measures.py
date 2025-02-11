@@ -4,7 +4,12 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 import wandb
 
-def plot_complete_measures(mu, nu,run_name, save_path):
+def plot_complete_measures(
+        mu, 
+        nu,
+        run_name, 
+        save_path
+    ):
     """
     Plot measures for all classes
     :param measures: dictionary with measures for all classes
@@ -83,7 +88,12 @@ def plot_complete_measures(mu, nu,run_name, save_path):
     wandb.log({"full_measure2": wandb.Image(fig, caption="Full Measure 2")})
     plt.savefig(save_path+'/'+run_name+'full_measure2.pdf', format='pdf')
 
-def plot_measure_short(mu, nu, run_name, save_path):
+def plot_measure_short(
+        mu, 
+        nu, 
+        run_name, 
+        save_path
+    ):
      # Create figure and grid spec
     fig = plt.figure(figsize=(8, 5))
     gs = gridspec.GridSpec(4,11, figure=fig, width_ratios=[1, 0.01, 1, 0.4, 1, 0.01, 1,0.4, 1, 0.01, 1], height_ratios=[1, 1,1, 1])
@@ -137,7 +147,12 @@ def plot_measure_short(mu, nu, run_name, save_path):
     wandb.log({"short_measure": wandb.Image(fig, caption="Short Measure ")})
     plt.savefig(save_path+'/'+run_name+'short_measure.pdf', format='pdf')
 
-def plot_measure_tight(mu, nu, run_name, save_path):
+def plot_measure_tight(
+        mu, 
+        nu, 
+        run_name, 
+        save_path
+    ):
     # Create figure and grid spec
     rows, cols = 11, 11  # Number of rows and columns in the grid
     image_size = (64, 64)  # Size of each individual image

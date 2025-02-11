@@ -15,8 +15,15 @@ class Generator(nn.Module):
     Measure generating network class.
     """
 
-    def __init__(self, dim_prior : int, dim : int, dim_hidden : int, num_layers : int,
-                 dust_const : float, skip_const : float):
+    def __init__(
+            self, 
+            dim_prior : int, 
+            dim : int, 
+            dim_hidden : int, 
+            num_layers : int,
+            dust_const : float, 
+            skip_const : float
+        ):
 
         """
         Parameters
@@ -55,7 +62,10 @@ class Generator(nn.Module):
         self.layers.append(nn.Sequential(nn.Linear(dim_hidden, 2*dim), nn.Sigmoid()))
 
 
-    def forward(self, x):
+    def forward(
+            self, 
+            x
+        ):
 
         # Creating a reshaped copy of the input to use as a skip connection
         x_0 = x.reshape(2, x.size(0), self.length_prior, self.length_prior)
@@ -86,8 +96,15 @@ class Generator_Var_Eps(nn.Module):
     Measure generating network class with changing measures over the regularization parameter epsilion.
     """
 
-    def __init__(self, dim_prior : int, dim : int, dim_hidden : int, num_layers : int,
-                 dust_const : float, skip_const : float):
+    def __init__(
+            self, 
+            dim_prior : int, 
+            dim : int, 
+            dim_hidden : int, 
+            num_layers : int,
+            dust_const : float, 
+            skip_const : float
+        ):
 
         """
         Parameters
@@ -133,7 +150,11 @@ class Generator_Var_Eps(nn.Module):
         
         
 
-    def forward(self, x, epsilon):
+    def forward(
+            self, 
+            x, 
+            epsilon
+        ):
         # Creating a reshaped copy of the input to use as a skip connection
         x_0 = x.reshape(2, x.size(0), self.length_prior, self.length_prior)
         transform = torchvision.transforms.Resize((self.length, self.length),antialias=True)

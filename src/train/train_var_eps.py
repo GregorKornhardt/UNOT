@@ -139,7 +139,13 @@ class Training():
         return
 
 
-    def mini_loop_predictor(self, mu, nu, eps, dim):
+    def mini_loop_predictor(
+            self, 
+            mu, 
+            nu, 
+            eps, 
+            dim
+        ):
         self.predictor_optimizer.zero_grad()
 
         mu, nu = self.convert_image(mu, dim), self.convert_image(nu, dim)
@@ -171,7 +177,10 @@ class Training():
         return
 
 
-    def mini_loop_gen(self, z):
+    def mini_loop_gen(
+            self, 
+            z
+        ):
         # update the generator
         self.generator_optimizer.zero_grad()
         mu, nu = self.apply_generator(z, self.generator)
@@ -214,7 +223,11 @@ class Training():
         return z, epsilon
 
 
-    def convert_image(self, img: torch.Tensor, k: int) -> torch.Tensor:
+    def convert_image(
+            self, 
+            img: torch.Tensor, 
+            k: int
+        ) -> torch.Tensor:
     # img-Form: (Batch, Channels, n, n)
         img = img.reshape(-1,1, self.length, self.length)
         img_int = F.interpolate(img, size=(k, k), mode='bilinear', align_corners=False).reshape(-1, k**2)
@@ -252,9 +265,10 @@ class Training():
         torch.save(measure_dict, self.path+'/'+self.name+'.pt')
 
 
-    def apply_sobel_filter(self, mu):
-        import torch.nn.functional as F
-
+    def apply_sobel_filter(
+            self, 
+            mu
+        ):
         # Definiere die Sobel-Filter-Kernel
         sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
         sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
@@ -272,7 +286,12 @@ class Training():
         return sobel_filtered_mu
     
     
-    def apply_predictor(self, mu, nu, eps):
+    def apply_predictor(
+            self, 
+            mu, 
+            nu, 
+            eps
+        ):
         length = int(math.isqrt(mu.shape[-1]))
         
         if self.sobel:
@@ -291,7 +310,10 @@ class Training():
         return self.predictor(input.float()).reshape(-1, length*length)
     
 
-    def get_grid(self, length):
+    def get_grid(
+            self, 
+            length
+        ):
         x = torch.linspace(0, 1, length)
         y = torch.linspace(0, 1, length)
         grid = torch.stack(torch.meshgrid(x, y)).to(self.device)
@@ -306,7 +328,11 @@ class Training():
         return mu, nu
 
 
-    def target_sinkhorn(self, mu, nu):
+    def target_sinkhorn(
+            self, 
+            mu, 
+            nu
+        ):
         with torch.no_grad():
             # Bootstrap the empirical measures
             eps = torch.ones_like(mu, device=self.device) * 0.01
@@ -318,7 +344,13 @@ class Training():
         return g, ~torch.isnan(v).any(dim=1).to(self.device)
     
     
-    def target_sinkhorn_var_eps(self, mu, nu, eps, cost_matrix):
+    def target_sinkhorn_var_eps(
+            self, 
+            mu, 
+            nu, 
+            eps, 
+            cost_matrix
+        ):
         with torch.no_grad():
             # Bootstrap the empirical measures
             nu0 = torch.exp(self.apply_predictor(mu, nu, eps))
@@ -329,7 +361,10 @@ class Training():
         return g, ~torch.isnan(v).any(dim=1).to(self.device)
 
 
-    def get_cost_matrix(self, dim):
+    def get_cost_matrix(
+            self, 
+            dim
+        ):
         length = int(math.isqrt(dim))
         if length == 28:
             return self.cost_matrix_28
@@ -337,7 +372,10 @@ class Training():
             return self.cost_matrix_64
     
 
-    def checkpoint(self, i):
+    def checkpoint(
+            self, 
+            i
+        ):
         if i % 100 == 0:
             print(f'Generator 64 loss: {self.train_losses["generator 64"][-1]}',  f'Predictor Gen loss: {self.train_losses["predictor_gen"][-1]}')
             self.test_performance()

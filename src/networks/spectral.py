@@ -35,7 +35,14 @@ class SpectralConv2d(nn.Module):
         >>> output = layer(x)  # shape: [20, 1, 64, 64]
     """
 
-    def __init__(self, in_channels, out_channels, modes, n_layers:int=4, hidden_width=4):
+    def __init__(
+            self, 
+            in_channels, 
+            out_channels, 
+            modes, 
+            n_layers:int=4, 
+            hidden_width=4
+        ):
         super(SpectralConv2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -46,7 +53,11 @@ class SpectralConv2d(nn.Module):
         self.layers.extend([Complex_Linear_Layer(hidden_width*out_channels,hidden_width*out_channels, modes[0], modes[1]) for _ in range(n_layers-2)])
         self.layers.append(Complex_Linear_Layer(hidden_width*out_channels, out_channels, modes[0], modes[1], bias=False))
 
-    def forward(self, x):
+
+    def forward(
+            self,
+            x
+        ):
         batch_size, channels, spatial_points_x, spatial_points_y = x.shape
         x_hat = torch.fft.rfft2(x)
 
@@ -62,26 +73,48 @@ class SpectralConv2d(nn.Module):
         out = torch.fft.irfft2(out_hat, s=(spatial_points_x, spatial_points_y))
         return out.view(batch_size, self.out_channels, spatial_points_x, spatial_points_y)
 
-    def network(self, x):
+
+    def network(
+            self, 
+            x
+        ):
         for layer in self.layers[:-1]:
             x = layer(x)
             x = F.gelu(x.real) + 1j * F.gelu(x.imag)
         x = self.layers[-1](x)
         return x
 
-    def num_modes_x(self, spatial_points_x):
+
+    def num_modes_x(
+            self, 
+            spatial_points_x
+        ):
         return min(spatial_points_x, self.modes[0])
     
-    def num_modes_y(self, spatial_points_y):
+
+    def num_modes_y(
+            self, 
+            spatial_points_y
+        ):
         return min(spatial_points_y//2 + 1, self.modes[1])
     
-    def zero_padding_fft(self, x, spatial_points_x, spatial_points_y):
+    def zero_padding_fft(
+            self, 
+            x, 
+            spatial_points_x, 
+            spatial_points_y
+        ):
         out_size = (x.size(0), self.out_channels, spatial_points_x, spatial_points_y//2 + 1)
         out = torch.zeros(out_size, dtype=torch.complex64, device=x.device)
         out[:, :, :self.num_modes_x(spatial_points_x), :self.num_modes_y(spatial_points_y)] = x[:, :, :self.num_modes_x(spatial_points_x), :self.num_modes_y(spatial_points_y)]
         return out
     
-    def zero_padding_modes(self, x, modes_x, modes_y):
+    def zero_padding_modes(
+            self, 
+            x, 
+            modes_x, 
+            modes_y
+        ):
         out_size = (x.size(0), self.out_channels, modes_x, modes_y)
         out = torch.zeros(out_size, dtype=torch.complex64, device=x.device)
         out[:, :, :x.shape[-2], :x.shape[-1]] = x
@@ -119,7 +152,14 @@ class Complex_Linear_Layer(nn.Module):
         The weights are initialized using Xavier uniform initialization,
         and biases (if used) are initialized to zero.
     """
-    def __init__(self, in_channels, out_channels, modes_x, modes_y, bias: bool = True):
+    def __init__(
+            self, 
+            in_channels, 
+            out_channels, 
+            modes_x, 
+            modes_y, 
+            bias: bool = True
+        ):
         super(Complex_Linear_Layer, self).__init__()
         self.in_features = in_channels
         self.out_features = out_channels
@@ -141,13 +181,20 @@ class Complex_Linear_Layer(nn.Module):
             nn.init.zeros_(self.real_bias)
             nn.init.zeros_(self.imag_bias)
 
-    def complex_mult2d(self, x_hat, w):
+    def complex_mult2d(
+            self, 
+            x_hat, 
+            w
+        ):
         # Führt elementweise komplexe Multiplikation mit Batch-Unterstützung durch
         real = torch.einsum("b iMN, i o MN -> b o MN", x_hat.real, w.real) - torch.einsum("b iMN, i o MN -> b o MN", x_hat.imag, w.imag)
         imag = torch.einsum("b iMN, i o MN -> b o MN", x_hat.real, w.imag) + torch.einsum("b iMN, i o MN -> b o MN", x_hat.imag, w.real)
         return torch.complex(real, imag)
 
-    def forward(self, x):
+    def forward(
+            self, 
+            x
+        ):
         weights = torch.complex(self.real_weights, self.imag_weights)
 
         x = self.complex_mult2d(x, weights) 

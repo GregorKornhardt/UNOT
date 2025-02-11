@@ -11,9 +11,14 @@ import torch
 from typing import Tuple
 
 
-def sink(mu : torch.Tensor, nu : torch.Tensor, C : torch.Tensor, eps : float,
-         v0 : torch.Tensor, maxiter : int) -> tuple[torch.Tensor, torch.Tensor,
-                                                    torch.Tensor, float]:
+def sink(
+        mu : torch.Tensor, 
+        nu : torch.Tensor, 
+        C : torch.Tensor, 
+        eps : float,
+        v0 : torch.Tensor, 
+        maxiter : int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
 
     """
     The standard Sinkhorn algorithm!
@@ -58,8 +63,14 @@ def sink(mu : torch.Tensor, nu : torch.Tensor, C : torch.Tensor, eps : float,
 
     return u, v, G, dist
 
-def sink_vec(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
-             eps : float, V0 : torch.Tensor, n_iters : int) -> torch.Tensor:
+def sink_vec(
+        MU : torch.Tensor, 
+        NU : torch.Tensor, 
+        C : torch.Tensor,
+        eps : float, 
+        V0 : torch.Tensor,
+        n_iters : int
+    ) -> torch.Tensor:
 
     """
     A vectorized version of the Sinkhorn algorithm to create scaling factors
@@ -97,8 +108,14 @@ def sink_vec(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
 
     return U, V
 
-def sink_vec_dist(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
-             eps : float, V0 : torch.Tensor, n_iters : int) -> torch.Tensor:
+def sink_vec_dist(
+        MU : torch.Tensor, 
+        NU : torch.Tensor, 
+        C : torch.Tensor,
+        eps : float, 
+        V0 : torch.Tensor, 
+        n_iters : int
+    ) -> torch.Tensor:
     """
     A vectorized version of the Sinkhorn algorithm to create scaling factors
     to be used for generating targets.
@@ -138,8 +155,14 @@ def sink_vec_dist(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
 
 
 #@torch.jit.script
-def sink_vec_eps(MU : torch.Tensor, NU : torch.Tensor, C : torch.Tensor,
-             eps : torch.Tensor, V0 : torch.Tensor, n_iters : int) -> Tuple[torch.Tensor, torch.Tensor]:
+def sink_vec_eps(
+        MU : torch.Tensor, 
+        NU : torch.Tensor, 
+        C : torch.Tensor,
+        eps : torch.Tensor, 
+        V0 : torch.Tensor, 
+        n_iters : int
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
 
     """
     A vectorized version of the Sinkhorn algorithm to create scaling factors

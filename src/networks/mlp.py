@@ -13,7 +13,12 @@ class Predictor_Var_Eps(nn.Module):
     Predictive network class.
     """
 
-    def __init__(self, dim : int, width : int, n_layers : int = 3):
+    def __init__(
+            self, 
+            dim : int, 
+            width : int, 
+            n_layers : int = 3
+        ):
 
         """
         Parameters
@@ -47,7 +52,12 @@ class Predictor_Var_Eps(nn.Module):
                 nn.init.zeros_(layer.bias)
      
 
-    def forward(self, x_a, x_b, epsilon):
+    def forward(
+            self, 
+            x_a, 
+            x_b, 
+            epsilon
+        ):
         x = torch.cat((x_a, x_b, epsilon), dim=1)
         for layer in self.layers:
             x = layer(x)
@@ -60,7 +70,12 @@ class Predictor(nn.Module):
     Predictive network class.
     """
 
-    def __init__(self, dim : int, dim_hidden : int, num_layers : int):
+    def __init__(
+            self, 
+            dim : int, 
+            dim_hidden : int, 
+            num_layers : int
+        ):
 
         """
         Parameters
@@ -83,7 +98,11 @@ class Predictor(nn.Module):
         self.layers.append(nn.Sequential(nn.Linear(dim_hidden, dim)))
      
 
-    def forward(self, x_a, x_b):
+    def forward(
+            self, 
+            x_a, 
+            x_b
+        ):
         x = torch.cat((x_a, x_b), dim=1)
         for layer in self.layers:
             x = layer(x)

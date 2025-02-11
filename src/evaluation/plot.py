@@ -285,7 +285,10 @@ def plot_error_over_iter(
     plt.show()
 
 
-def plot_error_dim(set_dim, model_name):
+def plot_error_dim(
+        set_dim, 
+        model_name
+    ):
     def color(key):
         if key == 'predicted':
             return 'crimson'
@@ -326,7 +329,11 @@ def plot_error_dim(set_dim, model_name):
         plt.show()
 
 
-def plot_error_dim_eps_matrix(data_set, set_error_dim, model_name):
+def plot_error_dim_eps_matrix(
+        data_set, 
+        set_error_dim, 
+        model_name
+    ):
     fig, axes = plt.subplots(len(data_set), len(data_set), figsize=(17, 15), sharex=True, sharey=True)
     #fig.suptitle("Relative Error across Dataset Pairs and Dimension and Regularization Parameter $\epsilon$", fontsize=27)
 
@@ -375,7 +382,11 @@ def plot_error_dim_eps_matrix(data_set, set_error_dim, model_name):
     plt.show()
 
 
-def plot_error_dim_matrix(data_set, set_error_dim, model_name):
+def plot_error_dim_matrix(
+        data_set, 
+        set_error_dim, 
+        model_name
+    ):
     def color(key):
         if key == 'predicted':
             return 'crimson'

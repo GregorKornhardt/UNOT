@@ -1,9 +1,20 @@
+"""
+gradient_flow.py
+----------------
+
+Calculates the Sinkhorn divergence on Sinkhorn divergence gradient flow.
+"""
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
 from PIL import Image
 import math
+
+import os 
+import sys 
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.ot.cost_matrix  as cost
 import src.ot.sinkhorn as sh
@@ -12,8 +23,42 @@ import src.evaluation.import_models as im
 
 
 class SD_outer(torch.autograd.Function):
+    """
+    A custom autograd Function implementing the outer Sinkhorn Divergence computation.
+    This class implements forward and backward passes for computing Sinkhorn Divergences 
+    between probability distributions using nested optimal transport problems.
+   
+    Args:
+        predictor (callable): 
+            Network that predicts potentials for initialization
+        mu (torch.Tensor): 
+            Source probability measure
+        nu (torch.Tensor): 
+            Target probability measure 
+        x (torch.Tensor): 
+            Source sample points
+        y (torch.Tensor): 
+            Target sample points
+        cost_matrix (torch.Tensor): Matrix of transportation costs between points
+    Returns:
+        torch.Tensor: Computed Sinkhorn Divergence value between the distributions
+    Note:
+        The forward pass computes nested optimal transport problems to calculate the
+        Sinkhorn Divergence. The backward pass computes gradients with respect to the
+        input tensors using saved intermediate values from the forward pass.
+    The implementation uses entropic regularization with epsilon=1e-2 for the inner
+    optimal transport problems and epsilon=1e-3 for the outer problems.
+    """
     @staticmethod
-    def forward(ctx, predictor, mu, nu, x, y, cost_matrix):
+    def forward(
+        ctx, 
+        predictor, 
+        mu, 
+        nu, 
+        x, 
+        y, 
+        cost_matrix
+    ):
         maxiter = 100
         # Compute f(x) using g(x) for the forward pass
         def inner_matrix(mu, nu):
@@ -56,7 +101,10 @@ class SD_outer(torch.autograd.Function):
         return dist - 0.5 * dist_x
     
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(
+        ctx, 
+        grad_output
+    ):
         G, G_x, V, U_x, V_x, U_x_x = ctx.saved_tensors  
         
         g = torch.einsum("ij,ijn->in", G, V - U_x) - torch.einsum("ij,ijn->in", G_x, V_x - U_x_x) 
@@ -70,7 +118,11 @@ class SD_outer(torch.autograd.Function):
         return grad_predictor, grad_mu, grad_nu, grad_x, grad_y, grad_cost_matrix
 
 
-def gradient_flow_image(predictor, y, niter=100):
+def gradient_flow_image(
+        predictor, 
+        y, 
+        niter=100
+    ):
     x = torch.rand_like(y, requires_grad=True) 
     images = []
 
@@ -92,7 +144,35 @@ def gradient_flow_image(predictor, y, niter=100):
     return x, images
 
 
-def gradient_flow(predictor, y, niter=100):
+def gradient_flow(
+        predictor, 
+        y, 
+        niter=100
+    ):
+    """
+        Performs gradient flow optimization to find an optimal source distribution given a target distribution.
+        This function implements an iterative optimization process using the Sinkhorn-Divergence as a distance measure
+        between probability distributions. It uses the AdamW optimizer to minimize the distance between the predicted
+        and target distributions.
+        Parameters:
+            predictor (torch.nn.Module): 
+                Neural network model that makes predictions
+            y (torch.Tensor): 
+                Target measure tensor
+            niter (int, optional): Number of iterations for the gradient flow optimization. Defaults to 100
+        Returns:
+            torch.Tensor: 
+                Optimal measure 
+        Notes:
+            - The function initializes the source distribution randomly
+            - Uses uniform measures (mu, nu) for both source and target distributions
+            - Employs softmax to ensure proper probability distribution
+            - Uses a pre-computed cost matrix for the optimal transport computation
+        Example:
+            >>> model = MyPredictorModel()
+            >>> target = torch.randn(100, 784)
+            >>> optimized_source = gradient_flow(model, target, niter=150)
+        """
     x = torch.rand_like(y, requires_grad=True) 
 
     num_input = y.shape[0]
@@ -112,7 +192,10 @@ def gradient_flow(predictor, y, niter=100):
     return x
 
 
-def plot_all(images, ground_truth=None):
+def plot_all(
+        images,
+        ground_truth=None
+    ):
     # Dimensions for the small images (n, n)
     n = 64  # Example size of each small image (64x64)
 
@@ -178,7 +261,7 @@ def main():
             
     lfw = df.preprocessor(lfw, length, dust_const)
     
-    predictor = im.load_model('predictor_64_eps=1e-2_2024-10-26', length**2, device)
+    predictor = im.load_fno('unot', device=device)
     
     x,image = gradient_flow_image(predictor, lfw[2:12].to(device), 100)
     

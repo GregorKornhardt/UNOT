@@ -263,6 +263,7 @@ def load_fno_var_epsilon(
         width: int = 128,
         activation: torch.nn.Module = torch.nn.GELU(),
         grid: bool = True,
+        fixed_eps: bool = False,
         device: str = 'mps',
     ) -> torch.nn.Module:
     '''
@@ -283,6 +284,8 @@ def load_fno_var_epsilon(
         The activation function to be used in the model. Default is GELU.
     grid : bool, optional
         If True, the spatial grid is included as an additional input to the model. If False, the grid is not included. Default is True.
+    fixed_eps : bool, optional
+        If True, the epsilon value is fixed to 1e-2 and does not need to be provided during inference. Default is False.
     device : str, optional
         The device to load the model onto. Can be either 'cpu', 'cuda', or 'mps' for Apple M1 chips. Default is 'mps'.
 
@@ -315,5 +318,9 @@ def load_fno_var_epsilon(
     
     # Set the model to evaluation mode for inference
     predictor.eval()
+
+    if fixed_eps:
+        eps = torch.tensor(1e-2).to(device)
+        return lambda mu, nu : apply_predictor(predictor, mu, nu, eps, grid)
     
     return lambda mu, nu, eps : apply_predictor(predictor, mu, nu, eps, grid)

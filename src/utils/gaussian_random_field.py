@@ -42,7 +42,11 @@ def fftind(size):
     return k_ind
 
 
-def gaussian_random_field(alpha=3.0, size=128, flag_normalize=True):
+def gaussian_random_field(
+        alpha=3.0, 
+        size=128, 
+        flag_normalize=True
+    ):
     """ Returns a torch tensor of shifted Fourier coordinates k_x k_y.
         
         Input args:
@@ -91,7 +95,6 @@ def gaussian_random_field(alpha=3.0, size=128, flag_normalize=True):
 
 
 if __name__=='__main__':
-    import matplotlib
     import matplotlib.pyplot as plt
     for i in range(20):
         plt.figure()

@@ -1,15 +1,29 @@
+"""
+barycenter_shapes.py
+-------
+
+This script will generate a barycenter of different shapes and save the image.
+"""
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 from matplotlib.colors import LinearSegmentedColormap
 import argparse
+import os 
+import sys 
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import src.evaluation.import_models as im
 import src.ot.cost_matrix  as cost
+from src.evaluation.barycenter import barycenter
 
 
-def shape_measures(dimension, device):
+def shape_measures(
+        dimension, 
+        device
+    ):
     def donut():
         x, y = np.meshgrid(
             np.linspace(-2, 2, dimension), np.linspace(-2, 2, dimension)
@@ -87,46 +101,11 @@ def shape_measures(dimension, device):
 
     return mu
 
-def barycenter(predictor, mu, cost_matrix, weights): 
-    v0 = torch.ones(mu.shape[1],requires_grad = (True), device = mu.device)
-    softmax = torch.nn.Softmax(1)
-    opt = torch.optim.AdamW([v0], lr=0.1)
-    
-    K = torch.exp(-cost_matrix/0.01)
-    for k in tqdm(range(100)):
-        
-        opt.zero_grad()
-        v = predictor(softmax(v0.unsqueeze(0)), softmax(v0.unsqueeze(0)))
-        v = torch.exp(v)
-        for _ in range(1):
-            u = softmax(v0.unsqueeze(0)) / (K @ v.squeeze())
-            v = softmax(v0.unsqueeze(0)) / (K.T @ u.squeeze())
-        f_mu = torch.log(v) * 0.01
 
-        for i in range(mu.shape[0]):
-            #v_input = (v0 + torch.abs(v0.min())) /(v0 + torch.abs(v0.min())).sum()
-            #v = predictor(softmax(v0.unsqueeze(0)), mnist_0[:,i].unsqueeze(0))
-            v = predictor(mu[i].unsqueeze(0), softmax(v0.unsqueeze(0)))
-            v = torch.exp(v)
-            for _ in range(1):
-                u = mu[i] / (K @ v.squeeze())
-                v = softmax(v0.unsqueeze(0)) / (K.T @ u.squeeze())
-            f = torch.log(u) * 0.01
-            g = torch.log(v) * 0.01
-
-            if v0.grad is not None:
-                v0.grad += weights[i] * (g.flatten() - f_mu.flatten())
-            else:
-                v0.grad = weights[i] * (g.flatten() - f_mu.flatten())
-            
-        #v0 = v0 - 0.1 * v0.grad
-        #loss.backward(retain_graph=True)
-        opt.step()
-        
-    return softmax(v0.unsqueeze(0))
-
-
-def plot_barycenter(predictor, device):
+def plot_barycenter(
+        predictor, 
+        device
+    ):
     mu = shape_measures(64, device)
     cost_matrix = cost.fast_get_cost_matrix(64, device)
 
@@ -166,9 +145,7 @@ def plot_barycenter(predictor, device):
                 with torch.no_grad():
                     bar = barycenter(predictor, mu, cost_matrix, weights=M[k, i]).cpu()
                 small_image = bar.reshape(n, n)
-                #small_image = (bar.reshape(n, n) - bar.min()) / (bar.max() - bar.min()) * 255
-                #small_image = np.clip(small_image, 0, np.percentile(small_image, 95))
-                # Place the reshaped image into the large image
+                
                 large_image[y_offset:y_offset + n, x_offset:x_offset + n] = small_image
 
                 # Update the position for the next image
@@ -214,17 +191,13 @@ def plot_barycenter(predictor, device):
         cmap = LinearSegmentedColormap.from_list('custom', colors, N=n_bins)
         
         return cmap
-    # List of images, each of shape (batch, n*n)
 
-    # Dimensions for the small images (n, n)
-    n = 64  # Example size of each small image (64x64)
 
     # Number of images per row and column in the large image
     images_per_row = 5
     images_per_column = 5
 
     # Create an empty array to hold the large image
-    large_image_color = np.zeros((n * (images_per_column) , n * images_per_row))
     fig, axs = plt.subplots(5, 5, figsize=(5,5))
 
     # Reshape each image from (batch, n*n) to (n, n) and place it in the large image
@@ -234,11 +207,7 @@ def plot_barycenter(predictor, device):
             for i in range(5):
                 if y_offset >= n * images_per_column:
                     break
-                # Reshape each image into (n, n)
-                #if (k == 0 and i == 0) or (k == 0 and i == 4) or (k == 4 and i == 0) or (k == 4 and i == 4):
-                #    bar = mu[(k // 4) * 2 + (i // 4)].cpu()
-                #else:
-                
+
                 small_image = large_image[y_offset:y_offset + n, x_offset:x_offset + n]
                 
                 cmap = create_custom_colormap(colormatrix[k,i])
@@ -256,7 +225,7 @@ def plot_barycenter(predictor, device):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Barycenter shapes')
-    parser.add_argument('--model', type=str, default='FNO', help='Model to use')
+    parser.add_argument('--model', type=str, default='unot', help='Model to use')
     parser.add_argument('--dimension', type=int, default=64, help='Dimension of the images')
     return parser.parse_args()
 

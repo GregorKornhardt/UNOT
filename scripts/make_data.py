@@ -4,6 +4,10 @@ make_data.py
 
 This script will download and save data for testing.
 """
+import os 
+import sys 
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.utils.data_functions import get_mnist, get_cifar, get_lfw, get_quickdraw, get_quickdraw_multi
 
@@ -26,6 +30,12 @@ get_cifar(n_samples, path_cifar)
 root_np = data_path + '/quickdraw'
 path_bear = './data/bear.pt'
 class_name = 'bear'
+get_quickdraw(n_samples, root_np, path_bear, class_name)
+
+# car
+root_np = data_path + '/quickdraw'
+path_bear = './data/car.pt'
+class_name = 'car'
 get_quickdraw(n_samples, root_np, path_bear, class_name)
 
 # quickdraw
