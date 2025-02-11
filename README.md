@@ -27,7 +27,7 @@ model = load_fno("Models/unot_fno_var_eps.pt")
 
 
 ## Training
-If you want to train your own model, you need to first prepare the test datasets, and can then run a train script as
+If you want to train your own model, you first need to prepare the test datasets, and can then run a train script as
 outlined below.
 
 ### Prepare Datasets
@@ -55,8 +55,11 @@ MLP instead of an FNO, which only accepts fixed size inputs, but can be trained 
 minutes.
 
 
-### Citation
-If you find this repository helpful, please cite our paper:
+## 
+
+
+## Citation
+If you find this repository helpful, please consider citing our paper:
 
 ```bibtex
 @article{geuter2025universal,
