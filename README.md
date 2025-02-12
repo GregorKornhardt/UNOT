@@ -38,22 +38,22 @@ outlined below.
 ### Prepare Datasets
 To download the test datasets, run
 ```python
-scripts/make_data.py
+python scripts/make_data.py
 ```
 Then, create test datasets with
 ```python
-scripts/create_test_set.py
+python scripts/create_test_set.py
 ```
 
 ### Training a new Model
 To train the model, run
 ```python
-scripts/main_neural_operator.py
+python scripts/main_neural_operator.py
 ```
 Various training hyperparameters as well as other (boolean) flags can be passed to this script; 
 e.g. to train without wandb logging, run
 ```python
-scripts/main_neural_operator.py --no-wandb
+python scripts/main_neural_operator.py --no-wandb
 ```
 The folder also contains training files to train a model with variable $\epsilon$, or an
 MLP instead of an FNO, which only accepts fixed size inputs, but can be trained within
@@ -68,7 +68,7 @@ If you find this repository helpful, please consider citing our paper:
     title={Universal Neural Optimal Transport},
     author={Geuter, J. and Kornhardt, G. and Tomasson, I. and Laschos, V.},
     year={2025},
-    url={coming}
+    url={https://arxiv.org/abs/2212.00133v5}
 }
 ```
 
