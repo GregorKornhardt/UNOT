@@ -1,5 +1,6 @@
 # UNOT: Universal Neural Optimal Transport
-This is the official repo for the paper "Universal Neural Optimal Transport" (Geuter et al., 2025).
+This is the official repo for the paper ["Universal Neural Optimal Transport"](https://arxiv.org/abs/2212.00133v5)
+(Geuter et al., 2025).
 To get started, install the requirements via
 
 ```bash
@@ -14,15 +15,19 @@ suffices). To use the pretrained FNO (Fourier Neural Operator), simply run
 
 ```python
 from src.evaluation.import_models import load_fno
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = load_fno("unot_fno.pt")
+model = load_fno("unot_fno", device=device)
+mu = torch.randn((1, 64)).to(device) # first flattened input measure, shape (batch_size, resolution**2)
+nu = torch.randn((1, 64)).to(device) # second flattened input measure
+g = model(mu, nu) # shape (1, 64)
 ```
 
 To use the FNO trained on variable $\epsilon$, you can load the model as follows:
 ```python
 from src.evaluation.import_models import load_fno_var_epsilon
 
-model = load_fno("unot_fno_var_eps.pt")
+model = load_fno("unot_fno_var_eps")
 ```
 
 

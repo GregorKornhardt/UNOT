@@ -4,13 +4,14 @@ from typing import Tuple
 from ..networks.FNO2d import FNO2d
 from ..networks.mlp import Predictor, Predictor_Var_Eps
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def load_mlp(
         name: str,
         dimension: int = 28,
         width_predictor: int = 4,
         num_layers: int = 3,
-        device: str = 'cpu'
+        device: str = device
     ) -> torch.nn.Module:
     '''
     Load a Multi-Layer Perceptron (MLP) model for use in predictions.
@@ -30,7 +31,7 @@ def load_mlp(
     num_layers : int, optional
         The number of hidden layers in the MLP. Default is 3.
     device : str, optional
-        The device to load the model onto. Can be either 'cpu' or 'cuda'. Default is 'cpu'.
+        The device to load the model onto. Can be either 'cpu' or 'cuda'.
 
     Returns
     -------
@@ -116,7 +117,7 @@ def load_fno(
         width: int = 64,
         activation: torch.nn.Module = torch.nn.GELU(),
         grid: bool = False,
-        device: str = 'mps',
+        device: str = device
     ) -> torch.nn.Module:
     '''
     Load a pre-trained Fourier Neural Operator (FNO) model for inference.
@@ -137,7 +138,7 @@ def load_fno(
     grid : bool, optional
         If True, the spatial grid is included as an additional input to the model. If False, the grid is not included. Default is False.
     device : str, optional
-        The device to load the model onto. Can be either 'cpu', 'cuda', or 'mps' for Apple M1 chips. Default is 'mps'.
+        The device to load the model onto. Can be either 'cpu', 'cuda', or 'mps'.
 
     Returns
     -------
@@ -311,7 +312,7 @@ def load_fno_var_epsilon(
     
     # Initialize the FNO model with the given parameters
     in_channels = 5 if grid else 3
-    predictor = FNO2d(in_channels, 1, modes, width, activation=torch.nn.GELU()).to(device)
+    predictor = FNO2d(in_channels, 1, modes, width, activation=activation).to(device)
     
     # Load the pre-trained model weights from file
     predictor.load_state_dict(torch.load('Models/' + name + '.pt', map_location=device, weights_only=True))
