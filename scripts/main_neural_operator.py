@@ -39,7 +39,7 @@ def parse_args():
         "--length_latent", type=int, default=10, help="Length of latent space"
     )
     parser.add_argument(
-        "--numbr_latent_samples", type=int, default=100, help="Number of latent samples"
+        "--numbr_latent_samples", type=int, default=5000, help="Number of latent samples"
     )
 
     # Generator Architecture
@@ -58,7 +58,7 @@ def parse_args():
     parser.add_argument(
         "--width_generator",
         type=int,
-        default=4,
+        default=0.04,
         help="Width of generator network, as a multiple of data length",
     )
 
@@ -99,7 +99,7 @@ def parse_args():
 
     # Optimization & Training
     parser.add_argument(
-        "--lr_gen", type=float, default=0.01, help="Learning rate for generator"
+        "--lr_gen", type=float, default=0.001, help="Learning rate for generator"
     )
     parser.add_argument(
         "--lr_pred", type=float, default=1e-4, help="Learning rate for predictor"
@@ -107,7 +107,7 @@ def parse_args():
     parser.add_argument(
         "--gamma_generator",
         type=float,
-        default=0.99996,
+        default=1,
         help="Gamma for generator LR scheduler",
     )
     parser.add_argument(
@@ -206,7 +206,7 @@ def main():
     # HYPERPARAMETERS Generator
     dimesion_latent = args.length_latent**2
     dimension = args.length**2
-    dim_generator = args.width_generator * args.length**2
+    dim_generator = int(args.width_generator * args.length**2)
 
     if args.generator == "MLP":
         generator = Generator(
