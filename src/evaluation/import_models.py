@@ -286,7 +286,7 @@ def load_fno_var_epsilon(
     activation: torch.nn.Module = torch.nn.GELU(),
     grid: bool = True,
     fixed_eps: bool = False,
-    device: str = "mps",
+    device: str = device,
 ) -> torch.nn.Module:
     """
     Load the Fourier Neural Operator (FNO) model for use with variable epsilon values.
@@ -309,7 +309,7 @@ def load_fno_var_epsilon(
     fixed_eps : bool, optional
         If True, the epsilon value is fixed to 1e-2 and does not need to be provided during inference. Default is False.
     device : str, optional
-        The device to load the model onto. Can be either 'cpu', 'cuda', or 'mps' for Apple M1 chips. Default is 'mps'.
+        The device to load the model onto. Can be either 'cpu', 'cuda', or 'mps' for Apple M1 chips.
 
     Returns
     -------
