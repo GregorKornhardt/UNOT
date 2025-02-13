@@ -1,9 +1,9 @@
 """
-run_all.py
+test_all.py
 -----------
 
 This module contains the function to compare barycenters computed with pot and neural networks.
-Run with python -m src.evaluation.run_all
+Run with python -m src.evaluation.test_all
 
 """
 
@@ -917,8 +917,12 @@ def test_neural_operator(args, device):
 
     def evaluate_dataset_pair(
         data1, data2, dim, number_of_samples, device, predictor, sinkhorn, cost_matrix
-    ):
-        set_mu, set_nu = df.random_set_measures(data1, data2, number_of_samples, dim)
+    ):  
+        try:
+            set_mu, set_nu = df.random_set_measures(data1, data2, number_of_samples, dim)
+        except:
+            print('Dataset not found')
+        
         results = set_evaluation(
             set_mu.to(device),
             set_nu.to(device),
@@ -1028,9 +1032,12 @@ def test_neural_operator_var_eps(args, device):
         set_error_dim[data1] = {}
 
         for data2 in tqdm(data_set[: i + 1], desc=f"Inner loop {data1}"):
-            set_mu, set_nu = df.random_set_measures(
-                data1, data2, args.number_of_samples, 64
-            )
+            try:
+                set_mu, set_nu = df.random_set_measures(
+                    data1, data2, args.number_of_samples, 64
+                )
+            except:
+                print('Dataset not found')
             error = relative_error_over_dimension_eps(
                 set_mu.to(device),
                 set_nu.to(device),

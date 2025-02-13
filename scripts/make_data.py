@@ -27,8 +27,11 @@ path_mnist = data_path + "/mnist.pt"
 get_mnist(n_samples, path_mnist)
 
 # lfw
-path_lfw = data_path + "/lfw.pt"
-get_lfw(n_samples, path_lfw)
+try:
+    path_lfw = data_path + "/lfw.pt"
+    get_lfw(n_samples, path_lfw)
+except:
+    print("LFW dataset not accessible, due to http://vis-www.cs.umass.edu/lfw being down")
 
 # cifar
 path_cifar = data_path + "/cifar.pt"

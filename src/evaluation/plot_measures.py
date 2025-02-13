@@ -81,33 +81,7 @@ def plot_complete_measures(mu, nu, run_name, save_path):
     plt.savefig(save_path + "/" + run_name + "full_measure1.pdf", format="pdf")
     # Create figure and grid spec
     fig = plt.figure(figsize=(16, 7.2))
-    gs = gridspec.GridSpec(
-        6,
-        19,
-        figure=fig,
-        width_ratios=[
-            1,
-            0.01,
-            1,
-            0.4,
-            1,
-            0.01,
-            1,
-            0.4,
-            1,
-            0.01,
-            1,
-            0.4,
-            1,
-            0.01,
-            1,
-            0.4,
-            1,
-            0.01,
-            1,
-        ],
-        height_ratios=[1, 1, 1, 1, 1, 1],
-    )
+    gs = gridspec.GridSpec(6, 19, figure=fig, width_ratios=[1, 0.01, 1, 0.4, 1, 0.01, 1, 0.4, 1, 0.01, 1, 0.4, 1, 0.01, 1, 0.4, 1, 0.01, 1], height_ratios=[1, 1, 1, 1, 1, 1])
     gs.update(wspace=0.01, hspace=0.01)
 
     # Plot first row

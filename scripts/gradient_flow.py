@@ -254,7 +254,7 @@ def main():
     # problem hyperparameters
     length = 64
     dust_const = 1e-6
-
+    
     with torch.no_grad():
         lfw = torch.load("data/lfw.pt", weights_only=True)
 
