@@ -27,7 +27,7 @@ To use the FNO trained on variable $\epsilon$, you can load the model as follows
 ```python
 from src.evaluation.import_models import load_fno_var_epsilon
 
-model = load_fno("unot_fno_var_eps")
+model = load_fno_var_epsilon("unot_fno_var_eps")
 ```
 
 
