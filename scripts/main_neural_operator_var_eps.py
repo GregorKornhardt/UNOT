@@ -23,7 +23,16 @@ def parse_args():
     )
     parser.add_argument("--dtype", type=str, default="float32", help="Data type")
     parser.add_argument(
-        "--wandb", type=bool, default=False, help="Use wandb for logging"
+        "--wandb",
+        action="store_true",
+        default=True,
+        help="Enable or disable wandb (default: enabled)",
+    )
+    parser.add_argument(
+        "--no-wandb",
+        action="store_false",
+        dest="wandb",
+        help="Disable wandb explicitly",
     )
 
     # Data & Input Settings
@@ -71,8 +80,8 @@ def parse_args():
         default=2,
         help="Number of hidden layers in spectral network",
     )
-    parser.add_argument("--sobel", type=bool, default=False, help="Use Sobel filter")
-    parser.add_argument("--grid", type=bool, default=False, help="Use grid data")
+    parser.add_argument("--sobel", action="store_true", help="Use Sobel filter")
+    parser.add_argument("--grid", action="store_true", help="Use grid data")
 
     # Regularization & Weight Decay
     parser.add_argument(
@@ -106,12 +115,12 @@ def parse_args():
     parser.add_argument(
         "--gamma_predictor",
         type=float,
-        default=0.99996,
+        default=0.9999,
         help="Gamma for predictor LR scheduler",
     )
-    parser.add_argument("--batch_size", type=int, default=256, help="Batch size")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
     parser.add_argument(
-        "--nits", type=int, default=400, help="Number of training iterations"
+        "--nits", type=int, default=10000, help="Number of training iterations"
     )
     parser.add_argument(
         "--nits_mini_loop_generator",
@@ -130,7 +139,7 @@ def parse_args():
     parser.add_argument(
         "--sinkhorn_max_iterations",
         type=int,
-        default=50,
+        default=5,
         help="Max iterations for Sinkhorn algorithm",
     )
     parser.add_argument(

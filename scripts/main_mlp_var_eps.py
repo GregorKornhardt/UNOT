@@ -21,7 +21,16 @@ def parse_args():
     parser.add_argument("--name", type=str, default="eps=1e-2", help="Experiment name")
     parser.add_argument("--dtype", type=str, default="float32", help="Data type")
     parser.add_argument(
-        "--wandb", type=bool, default=False, help="Use wandb for logging"
+        "--wandb",
+        action="store_true",
+        default=True,
+        help="Enable or disable wandb (default: enabled)",
+    )
+    parser.add_argument(
+        "--no-wandb",
+        action="store_false",
+        dest="wandb",
+        help="Disable wandb explicitly",
     )
 
     # Data & Model Dimensions
@@ -86,10 +95,10 @@ def parse_args():
     parser.add_argument(
         "--gamma-predictor",
         type=float,
-        default=0.99996,
+        default=0.9999,
         help="Gamma for predictor learning rate scheduler",
     )
-    parser.add_argument("--batch-size", type=int, default=256, help="Batch size")
+    parser.add_argument("--batch-size", type=int, default=64, help="Batch size")
     parser.add_argument(
         "--nits", type=int, default=10000, help="Number of training iterations"
     )
