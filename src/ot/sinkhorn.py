@@ -12,14 +12,13 @@ from typing import Tuple
 
 
 def sink(
-        mu : torch.Tensor, 
-        nu : torch.Tensor, 
-        C : torch.Tensor, 
-        eps : float,
-        v0 : torch.Tensor, 
-        maxiter : int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
-
+    mu: torch.Tensor,
+    nu: torch.Tensor,
+    C: torch.Tensor,
+    eps: float,
+    v0: torch.Tensor,
+    maxiter: int,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
     """
     The standard Sinkhorn algorithm!
 
@@ -50,28 +49,27 @@ def sink(
         Optimal transport distance.
     """
 
-    K = torch.exp(-C/eps)
+    K = torch.exp(-C / eps)
     v = v0
 
     for _ in range(maxiter):
         u = mu / (K @ v)
         v = nu / (K.T @ u)
 
-
-    G = torch.diag(u)@K@torch.diag(v)
-    dist = torch.trace(C.T@G)
+    G = torch.diag(u) @ K @ torch.diag(v)
+    dist = torch.trace(C.T @ G)
 
     return u, v, G, dist
 
-def sink_vec(
-        MU : torch.Tensor, 
-        NU : torch.Tensor, 
-        C : torch.Tensor,
-        eps : float, 
-        V0 : torch.Tensor,
-        n_iters : int
-    ) -> torch.Tensor:
 
+def sink_vec(
+    MU: torch.Tensor,
+    NU: torch.Tensor,
+    C: torch.Tensor,
+    eps: float,
+    V0: torch.Tensor,
+    n_iters: int,
+) -> torch.Tensor:
     """
     A vectorized version of the Sinkhorn algorithm to create scaling factors
     to be used for generating targets.
@@ -99,23 +97,24 @@ def sink_vec(
         2nd Scaling factor.
     """
 
-    K = torch.exp(-C/eps)
+    K = torch.exp(-C / eps)
     V = V0
-    
+
     for _ in range(n_iters):
         U = MU / (K @ V.T).T
         V = NU / (K.T @ U.T).T
 
     return U, V
 
+
 def sink_vec_dist(
-        MU : torch.Tensor, 
-        NU : torch.Tensor, 
-        C : torch.Tensor,
-        eps : float, 
-        V0 : torch.Tensor, 
-        n_iters : int
-    ) -> torch.Tensor:
+    MU: torch.Tensor,
+    NU: torch.Tensor,
+    C: torch.Tensor,
+    eps: float,
+    V0: torch.Tensor,
+    n_iters: int,
+) -> torch.Tensor:
     """
     A vectorized version of the Sinkhorn algorithm to create scaling factors
     to be used for generating targets.
@@ -142,28 +141,27 @@ def sink_vec_dist(
     V : (n_samples, dim) torch.Tensor
         2nd Scaling factor.
     """
-    K = torch.exp(-C/eps)
+    K = torch.exp(-C / eps)
     V = V0
-    
+
     for _ in range(n_iters):
         U = MU / (K @ V.T).T
         V = NU / (K.T @ U.T).T
 
     D = K * C  # Größe: [i, j]
-    dist = torch.einsum('si,ij,sj->s', U, D, V)  # Größe: [s]
+    dist = torch.einsum("si,ij,sj->s", U, D, V)  # Größe: [s]
     return U, V, dist
 
 
-#@torch.jit.script
+# @torch.jit.script
 def sink_vec_eps(
-        MU : torch.Tensor, 
-        NU : torch.Tensor, 
-        C : torch.Tensor,
-        eps : torch.Tensor, 
-        V0 : torch.Tensor, 
-        n_iters : int
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-
+    MU: torch.Tensor,
+    NU: torch.Tensor,
+    C: torch.Tensor,
+    eps: torch.Tensor,
+    V0: torch.Tensor,
+    n_iters: int,
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     A vectorized version of the Sinkhorn algorithm to create scaling factors
     to be used for generating targets.
@@ -192,8 +190,8 @@ def sink_vec_eps(
     """
     C = C.repeat(eps.shape[0], 1, 1)
     eps = eps.unsqueeze(1).unsqueeze(1)
-    K = torch.exp(-C/eps)
-    
+    K = torch.exp(-C / eps)
+
     V = V0.unsqueeze(2)
     U = V.clone()
     MU = MU.unsqueeze(2)

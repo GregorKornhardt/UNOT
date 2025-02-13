@@ -4,11 +4,15 @@ FNO2D.py
 
 Implementation of a 2D Fourier Neural Operator.
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Callable, List
-from src.networks.spectral import SpectralConv2d  # Annahme: spectral.py ist im gleichen Verzeichnis
+from src.networks.spectral import (
+    SpectralConv2d,
+)  # Annahme: spectral.py ist im gleichen Verzeichnis
+
 
 class FNOBlock2d(nn.Module):
     """
@@ -17,17 +21,17 @@ class FNOBlock2d(nn.Module):
 
     Parameters
     ----------
-        in_channels (int): 
+        in_channels (int):
             Number of input channels.
-        out_channels (int): 
+        out_channels (int):
             Number of output channels.
-        modes (int): 
+        modes (int):
             Number of Fourier modes to use in the spectral convolution.
-        activation (callable): 
+        activation (callable):
             Activation function to apply after the convolutions.
-        spectral_hidden_layers (int, optional): 
+        spectral_hidden_layers (int, optional):
             Number of hidden layers in the spectral MLP. Default is 2.
-        spectral_hidden_width (int, optional): 
+        spectral_hidden_width (int, optional):
             Width of the hidden layers in the spectral MLP. Default is 4.
 
     Methods
@@ -36,6 +40,7 @@ class FNOBlock2d(nn.Module):
             Applies the spectral convolution, bypass convolution, and activation function to the input tensor x.
 
     """
+
     def __init__(
         self,
         in_channels,
@@ -63,27 +68,28 @@ class FNOBlock2d(nn.Module):
     def forward(self, x):
         return self.activation(self.spectral_conv(x) + self.bypass_conv(x))
 
+
 class FNO2d(nn.Module):
     """
     A 2D Fourier Neural Operator (FNO) model.
 
     Parameters
     ----------
-        in_channels (int): 
+        in_channels (int):
             Number of input channels.
-        out_channels (int): 
+        out_channels (int):
             Number of output channels.
-        modes (int): 
+        modes (int):
             Number of Fourier modes to use.
-        width (int): 
+        width (int):
             Width of the network (number of channels in the hidden layers).
-        activation (callable): 
+        activation (callable):
             Activation function to use.
-        n_blocks (int, optional): 
+        n_blocks (int, optional):
             Number of FNO blocks to use. Default is 4.
-        spectral_hidden_layers (int, optional): 
+        spectral_hidden_layers (int, optional):
             Number of hidden layers in the spectral MLP. Default is 2.
-        spectral_hidden_width (int, optional): 
+        spectral_hidden_width (int, optional):
             Width of the hidden layers in the spectral MLP. Default is 4.
 
     Attributes
@@ -98,13 +104,14 @@ class FNO2d(nn.Module):
             Forward pass of the FNO2d model.
 
             Args:
-                x (torch.Tensor): 
+                x (torch.Tensor):
                     Input tensor of shape (batch_size, in_channels, height, width).
 
             Returns:
                 torch.Tensor:
                     Output tensor of shape (batch_size, out_channels, height, width).
     """
+
     def __init__(
         self,
         in_channels,
@@ -124,14 +131,16 @@ class FNO2d(nn.Module):
         )
         self.fno_blocks = nn.ModuleList()
         for _ in range(n_blocks):
-            self.fno_blocks.append(FNOBlock2d(
-                width,
-                width,
-                modes,
-                activation,
-                spectral_hidden_layers,
-                spectral_hidden_width,
-            ))
+            self.fno_blocks.append(
+                FNOBlock2d(
+                    width,
+                    width,
+                    modes,
+                    activation,
+                    spectral_hidden_layers,
+                    spectral_hidden_width,
+                )
+            )
         self.projection = nn.Conv2d(
             width,
             out_channels,

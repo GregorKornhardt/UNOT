@@ -8,11 +8,7 @@ Function(s) for computing loss values.
 import torch
 
 
-def hilbert_projoection(
-        U: torch.Tensor, 
-        V: torch.Tensor
-    ) -> float:
-
+def hilbert_projoection(U: torch.Tensor, V: torch.Tensor) -> float:
     """
     Compute the mean Hilbert projective loss between pairs of vectors.
 

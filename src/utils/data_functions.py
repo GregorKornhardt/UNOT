@@ -22,12 +22,10 @@ import src.ot.sinkhorn as sinkhorn
 import src.ot.cost_matrix as cost
 import src.utils.gaussian_random_field as grf
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def test_set_sampler(
-        test_set: torch.Tensor,
-        n_samples: int
-    ) -> torch.Tensor:
+def test_set_sampler(test_set: torch.Tensor, n_samples: int) -> torch.Tensor:
     """
     Randomly sample from a data set to create pairs of samples for testing.
 
@@ -46,7 +44,7 @@ def test_set_sampler(
 
     rand_perm = torch.randperm(test_set.size(0))
     rand_mask_a = rand_perm[:n_samples]
-    rand_mask_b = rand_perm[n_samples:2 * n_samples]
+    rand_mask_b = rand_perm[n_samples : 2 * n_samples]
     test_sample_a = test_set[rand_mask_a]
     test_sample_b = test_set[rand_mask_b]
     test_sample = torch.cat((test_sample_a, test_sample_b), dim=1)
@@ -54,11 +52,7 @@ def test_set_sampler(
     return test_sample
 
 
-def preprocessor(
-        dataset: torch.Tensor,
-        length: int,
-        dust_const: float
-    ) -> torch.Tensor:
+def preprocessor(dataset: torch.Tensor, length: int, dust_const: float) -> torch.Tensor:
     """
     Preprocess (resize, normalize, dust) a dataset for training.
 
@@ -81,37 +75,28 @@ def preprocessor(
     processed_dataset = F.interpolate(
         dataset.unsqueeze(1),
         size=(length, length),
-        mode='bilinear',
-        align_corners=False
+        mode="bilinear",
+        align_corners=False,
     ).squeeze(1)
 
     # flattening
-    processed_dataset = processed_dataset.view(-1, length ** 2)
+    processed_dataset = processed_dataset.view(-1, length**2)
 
     # normalizing
-    processed_dataset = processed_dataset / processed_dataset.sum(
-        dim=1,
-        keepdim=True
-    )
+    processed_dataset = processed_dataset / processed_dataset.sum(dim=1, keepdim=True)
 
     # dusting
     processed_dataset = processed_dataset + dust_const
 
     # normalizing
-    processed_dataset = processed_dataset / processed_dataset.sum(
-        dim=1,
-        keepdim=True
-    )
+    processed_dataset = processed_dataset / processed_dataset.sum(dim=1, keepdim=True)
 
     return processed_dataset
 
 
 def rand_noise(
-        n_samples: int,
-        dim: int,
-        dust_const: float,
-        pairs: bool
-    ) -> torch.Tensor:
+    n_samples: int, dim: int, dust_const: float, pairs: bool
+) -> torch.Tensor:
     """
     Create a batch of random uniform noise distributions with dusting and
     normalization to ensure the samples are positive probability vectors.
@@ -152,11 +137,8 @@ def rand_noise(
 
 
 def rand_shapes(
-        n_samples: int,
-        dim: int,
-        dust_const: float,
-        pairs: bool
-    ) -> torch.Tensor:
+    n_samples: int, dim: int, dust_const: float, pairs: bool
+) -> torch.Tensor:
     """
     Create a sample of images containing random shapes as pairs of probability
     distributions.
@@ -179,7 +161,7 @@ def rand_shapes(
         Sample of pairs of probability distributions.
     """
 
-    length = int(dim ** 0.5)
+    length = int(dim**0.5)
     sample_a = []
     sample_b = []
     for i in range(n_samples):
@@ -190,7 +172,7 @@ def rand_shapes(
             min_size=2,
             max_size=12,
             channel_axis=None,
-            allow_overlap=True
+            allow_overlap=True,
         )[0]
         image1 = image1.max() - image1
         image1 = image1 / image1.sum()
@@ -205,7 +187,7 @@ def rand_shapes(
                 min_size=2,
                 max_size=12,
                 channel_axis=None,
-                allow_overlap=True
+                allow_overlap=True,
             )[0]
             image2 = image2.max() - image2
             image2 = image2 + dust_const
@@ -225,11 +207,8 @@ def rand_shapes(
 
 
 def rand_noise_and_shapes(
-        n_samples: int,
-        dim: int,
-        dust_const: float,
-        pairs: bool
-    ) -> torch.Tensor:
+    n_samples: int, dim: int, dust_const: float, pairs: bool
+) -> torch.Tensor:
     """
     Generate a data set of pairs of samples of random shapes combined with
     random noise.
@@ -272,10 +251,7 @@ def rand_noise_and_shapes(
         return sample
 
 
-def get_mnist(
-        n_samples: int,
-        path: str
-    ) -> None:
+def get_mnist(n_samples: int, path: str) -> None:
     """
     Download and save a set of MNIST images as a pytorch tensor in a '.pt' file.
 
@@ -292,9 +268,7 @@ def get_mnist(
     """
 
     dataset = torchvision.datasets.MNIST(
-        root="./data",
-        download=True,
-        transform=torchvision.transforms.ToTensor()
+        root="./data", download=True, transform=torchvision.transforms.ToTensor()
     )
     mnist = torch.zeros((len(dataset), 28, 28))
     for i, datapoint in enumerate(dataset):
@@ -306,10 +280,7 @@ def get_mnist(
     return None
 
 
-def get_cifar(
-        n_samples: int,
-        path: str
-    ) -> None:
+def get_cifar(n_samples: int, path: str) -> None:
     """
     Download and save a set of CIFAR10 images as a pytorch tensor in a '.pt'
     file.
@@ -327,9 +298,7 @@ def get_cifar(
     """
 
     dataset = torchvision.datasets.CIFAR10(
-        root="./data",
-        download=True,
-        transform=torchvision.transforms.Grayscale()
+        root="./data", download=True, transform=torchvision.transforms.Grayscale()
     )
     transformer = torchvision.transforms.ToTensor()
     cifar = torch.zeros((len(dataset), 32, 32))
@@ -343,10 +312,7 @@ def get_cifar(
     return None
 
 
-def get_chinese_mnist(
-        n_samples: int,
-        path: str
-    ) -> None:
+def get_chinese_mnist(n_samples: int, path: str) -> None:
     """
     Download and save a set of chinese MNIST images as a pytorch tensor in a '.pt'
     file.
@@ -364,8 +330,7 @@ def get_chinese_mnist(
     """
 
     dataset = torchvision.datasets.ImageFolder(
-        root=path,
-        transform=torchvision.transforms.Grayscale()
+        root=path, transform=torchvision.transforms.Grayscale()
     )
     transformer = torchvision.transforms.ToTensor()
     c_mnist = torch.zeros((len(dataset), 64, 64))
@@ -375,15 +340,12 @@ def get_chinese_mnist(
     rand_perm = torch.randperm(len(c_mnist))
     c_mnist = c_mnist[rand_perm][:n_samples]
     print(c_mnist.size())
-    torch.save(c_mnist, 'Data/chinese_mnist.pt')
+    torch.save(c_mnist, "Data/chinese_mnist.pt")
 
     return None
 
 
-def get_lfw(
-        n_samples: int,
-        path: str
-    ) -> None:
+def get_lfw(n_samples: int, path: str) -> None:
     """
     Download and save a set of LFW images as a pytorch tensor in a '.pt'
     file.
@@ -401,9 +363,7 @@ def get_lfw(
     """
 
     dataset = torchvision.datasets.LFWPeople(
-        root="./data",
-        download=True,
-        transform=torchvision.transforms.Grayscale()
+        root="./data", download=True, transform=torchvision.transforms.Grayscale()
     )
     transformer = torchvision.transforms.ToTensor()
     lfw = torch.zeros((len(dataset), 250, 250))
@@ -419,11 +379,8 @@ def get_lfw(
 
 
 def get_quickdraw(
-        n_samples: int,
-        root_np: str,
-        path_torch: str,
-        class_name: str
-    ) -> None:
+    n_samples: int, root_np: str, path_torch: str, class_name: str
+) -> None:
     """
     Download and save a set of Quickdraw images of a specified class as a
     pytorch tensor in a '.pt' file using an intermediary numpy array and file.
@@ -456,7 +413,7 @@ def get_quickdraw(
     urllib.request.urlretrieve(url, filename)
 
     # Replace spaces in class name with underscores
-    class_name = class_name.replace(' ', '_')
+    class_name = class_name.replace(" ", "_")
     filename = os.path.join(root_np, f"{class_name}.npy")
 
     # Load numpy array and convert to tensor
@@ -493,18 +450,15 @@ def get_quickdraw_class_names() -> list:
 
     class_names = []
     for line in response:
-        class_name = line.decode('utf-8').strip()
+        class_name = line.decode("utf-8").strip()
         class_names.append(class_name)
 
     return class_names
 
 
 def get_quickdraw_multi(
-        n_samples: int,
-        n_classes: int,
-        root_np: str,
-        path_torch: str
-    ) -> None:
+    n_samples: int, n_classes: int, root_np: str, path_torch: str
+) -> None:
     """
     Download and save a set of Quickdraw images from a specified number of
     random classes as a pytorch tensor in a '.pt' file using intermediary numpy
@@ -541,8 +495,8 @@ def get_quickdraw_multi(
     for class_name in tqdm(class_names):
 
         # if class_name is two words, replace space with %20
-        if ' ' in class_name:
-            class_name = class_name.replace(' ', '%20')
+        if " " in class_name:
+            class_name = class_name.replace(" ", "%20")
 
         # Create directory if it does not exist
         if not os.path.exists(root_np):
@@ -556,7 +510,7 @@ def get_quickdraw_multi(
         urllib.request.urlretrieve(url, filename)
 
         # Replace spaces in class name with underscores
-        class_name = class_name.replace(' ', '_')
+        class_name = class_name.replace(" ", "_")
         filename = os.path.join(root_np, f"{class_name}.npy")
 
         # Load numpy array and convert to tensor
@@ -581,38 +535,34 @@ def get_quickdraw_multi(
     return None
 
 
-def load_and_preprocess(
-        measure,
-        length,
-        dust_const
-    ):
+def load_and_preprocess(measure, length, dust_const):
     data_paths = {
-        'mnist': 'data/mnist.pt',
-        'cifar': 'data/cifar.pt',
-        'lfw': 'data/lfw.pt',
-        'bear': 'data/bear.pt',
-        'quickdraw': 'data/quickdraw.pt',
-        'facialexpression': 'data/facialexpression.pt',
-        'car': 'data/car.pt',
+        "mnist": "data/mnist.pt",
+        "cifar": "data/cifar.pt",
+        "lfw": "data/lfw.pt",
+        "bear": "data/bear.pt",
+        "quickdraw": "data/quickdraw.pt",
+        "facialexpression": "data/facialexpression.pt",
+        "car": "data/car.pt",
     }
-    
+
     if measure in data_paths:
         data = torch.load(data_paths[measure], weights_only=True)
         processed_data = preprocessor(data, length, dust_const).numpy()
-        
+
         return processed_data
-    
-    raise ValueError('Measure not found.')
+
+    raise ValueError("Measure not found.")
 
 
 def random_set_measures(
-        first_measure: str,
-        second_measure: str,
-        number_of_samples: int,
-        length: int = 28,
-        dust_const: int = 1e-4
-    ) -> (torch.Tensor, torch.Tensor):
-    '''
+    first_measure: str,
+    second_measure: str,
+    number_of_samples: int,
+    length: int = 28,
+    dust_const: int = 1e-4,
+) -> (torch.Tensor, torch.Tensor):
+    """
     Get the measures from the data functions.
 
     Parameters
@@ -630,155 +580,122 @@ def random_set_measures(
         First probability measure.
     set_nu : (dim, number_of_samples) torch.Tensor
         Second probability measure.
-    '''
+    """
     first_measure = load_and_preprocess(first_measure, length, dust_const)
     second_measure = load_and_preprocess(second_measure, length, dust_const)
 
     random_indices_first = np.random.choice(
-        first_measure.shape[0],
-        number_of_samples,
-        replace=True
+        first_measure.shape[0], number_of_samples, replace=True
     )
     random_indices_second = np.random.choice(
-        second_measure.shape[0],
-        number_of_samples,
-        replace=True
+        second_measure.shape[0], number_of_samples, replace=True
     )
-    
-    return torch.tensor(first_measure[random_indices_first]), torch.tensor(second_measure[random_indices_second])
+
+    return torch.tensor(first_measure[random_indices_first]), torch.tensor(
+        second_measure[random_indices_second]
+    )
 
 
-def create_test_set(
-        num_elements,
-        length,
-        dust_const,
-        epsilon,
-        device
-    ):
+def create_test_set(num_elements, length, dust_const, epsilon):
     with torch.no_grad():
-        mnist = torch.load('Data/mnist.pt', weights_only=True)
-        lfw = torch.load('Data/lfw.pt', weights_only=True)
-        cifar = torch.load('Data/cifar.pt', weights_only=True)
-        bear = torch.load('Data/bear.pt', weights_only=True)
+        mnist = torch.load("Data/mnist.pt", weights_only=True)
+        lfw = torch.load("Data/lfw.pt", weights_only=True)
+        cifar = torch.load("Data/cifar.pt", weights_only=True)
+        bear = torch.load("Data/bear.pt", weights_only=True)
 
-    mnist = preprocessor(mnist, length, dust_const)[0:num_elements + 1].to(device)
-    lfw = preprocessor(lfw, length, dust_const)[0:num_elements + 1].to(device)
-    cifar = preprocessor(cifar, length, dust_const)[0:num_elements + 1].to(device)
-    bear = preprocessor(bear, length, dust_const)[0:num_elements + 1].to(device)
+    mnist = preprocessor(mnist, length, dust_const)[0 : num_elements + 1].to(device)
+    lfw = preprocessor(lfw, length, dust_const)[0 : num_elements + 1].to(device)
+    cifar = preprocessor(cifar, length, dust_const)[0 : num_elements + 1].to(device)
+    bear = preprocessor(bear, length, dust_const)[0 : num_elements + 1].to(device)
     cost_matrix = cost.get_cost_matrix(length, device)
 
-    def distance(
-        mu,
-        nu
-    ):
+    def distance(mu, nu):
         test_data_distance = []
-        
+
         for i in tqdm(range(mu.shape[0])):
             _, _, _, dist1000 = sinkhorn.sink(
-                mu[i],
-                nu[i],
-                cost_matrix,
-                epsilon,
-                torch.ones_like(mu[0]),
-                1000
+                mu[i], nu[i], cost_matrix, epsilon, torch.ones_like(mu[0]), 1000
             )
             test_data_distance.append(dist1000)
-        
-        return torch.stack(test_data_distance, dim=0).to('cpu')
-    
-    test_set_mnist = distance(
-        mnist[0:num_elements],
-        mnist[1:num_elements + 1]
-    )
-    test_set_lfw = distance(
-        lfw[0:num_elements],
-        lfw[1:num_elements + 1]
-    )
-    test_set_cifar = distance(
-        cifar[0:num_elements],
-        cifar[1:num_elements + 1]
-    )
-    test_set_bear = distance(
-        bear[0:num_elements],
-        bear[1:num_elements + 1]
-    )
-    test_set_bear_lfw = distance(
-        bear[0:num_elements],
-        lfw[1:num_elements + 1]
-    )
-    test_set_mnist_cifar = distance(
-        mnist[0:num_elements],
-        cifar[1:num_elements + 1]
-    )
+
+        return torch.stack(test_data_distance, dim=0).to("cpu")
+
+    print("Creating MNIST test set...")
+    test_set_mnist = distance(mnist[0:num_elements], mnist[1 : num_elements + 1])
+    print("Creating LFW test set...")
+    test_set_lfw = distance(lfw[0:num_elements], lfw[1 : num_elements + 1])
+    print("Creating CIFAR test set...")
+    test_set_cifar = distance(cifar[0:num_elements], cifar[1 : num_elements + 1])
+    print("Creating Bear test set...")
+    test_set_bear = distance(bear[0:num_elements], bear[1 : num_elements + 1])
+    print("Creating Bear-LFW test set...")
+    test_set_bear_lfw = distance(bear[0:num_elements], lfw[1 : num_elements + 1])
+    print("Creating MNIST-CIFAR test set...")
+    test_set_mnist_cifar = distance(mnist[0:num_elements], cifar[1 : num_elements + 1])
 
     dist_mnist = {
-        'mu': mnist[0:num_elements].to('cpu'),
-        'nu': mnist[1:num_elements + 1].to('cpu'),
-        'dist': test_set_mnist
+        "mu": mnist[0:num_elements].to("cpu"),
+        "nu": mnist[1 : num_elements + 1].to("cpu"),
+        "dist": test_set_mnist,
     }
     dist_lfw = {
-        'mu': lfw[0:num_elements].to('cpu'),
-        'nu': lfw[1:num_elements + 1].to('cpu'),
-        'dist': test_set_lfw
+        "mu": lfw[0:num_elements].to("cpu"),
+        "nu": lfw[1 : num_elements + 1].to("cpu"),
+        "dist": test_set_lfw,
     }
     dist_cifar = {
-        'mu': cifar[0:num_elements].to('cpu'),
-        'nu': cifar[1:num_elements + 1].to('cpu'),
-        'dist': test_set_cifar
+        "mu": cifar[0:num_elements].to("cpu"),
+        "nu": cifar[1 : num_elements + 1].to("cpu"),
+        "dist": test_set_cifar,
     }
     dist_bear = {
-        'mu': bear[0:num_elements].to('cpu'),
-        'nu': bear[1:num_elements + 1].to('cpu'),
-        'dist': test_set_bear
+        "mu": bear[0:num_elements].to("cpu"),
+        "nu": bear[1 : num_elements + 1].to("cpu"),
+        "dist": test_set_bear,
     }
     dist_bear_lfw = {
-        'mu': bear[0:num_elements].to('cpu'),
-        'nu': lfw[1:num_elements + 1].to('cpu'),
-        'dist': test_set_bear_lfw
+        "mu": bear[0:num_elements].to("cpu"),
+        "nu": lfw[1 : num_elements + 1].to("cpu"),
+        "dist": test_set_bear_lfw,
     }
     dist_mnist_cifar = {
-        'mu': mnist[0:num_elements].to('cpu'),
-        'nu': cifar[1:num_elements + 1].to('cpu'),
-        'dist': test_set_mnist_cifar
+        "mu": mnist[0:num_elements].to("cpu"),
+        "nu": cifar[1 : num_elements + 1].to("cpu"),
+        "dist": test_set_mnist_cifar,
     }
 
     test_set = {
-        'mnist': dist_mnist,
-        'lfw': dist_lfw,
-        'cifar': dist_cifar,
-        'bear': dist_bear,
-        'bear_lfw': dist_bear_lfw,
-        'mnist_cifar': dist_mnist_cifar
+        "mnist": dist_mnist,
+        "lfw": dist_lfw,
+        "cifar": dist_cifar,
+        "bear": dist_bear,
+        "bear_lfw": dist_bear_lfw,
+        "mnist_cifar": dist_mnist_cifar,
     }
-    
-    torch.save(test_set, f'Data/test_set__dim_{length}__eps_{epsilon}.pt')
+
+    torch.save(test_set, f"Data/test_set__dim_{length}__eps_{epsilon}.pt")
 
 
 def create_data_set(
-        num_elements,
-        length,
-        dust_const,
-        epsilon,
-        number_of_samples,
-        device
-    ):
+    num_elements, length, dust_const, epsilon, number_of_samples, device
+):
     with torch.no_grad():
-        mnist = torch.load('Data/mnist.pt', weights_only=True)
-        lfw = torch.load('Data/lfw.pt', weights_only=True)
-        cifar = torch.load('Data/cifar.pt', weights_only=True)
-        bear = torch.load('Data/bear.pt', weights_only=True)
+        mnist = torch.load("Data/mnist.pt", weights_only=True)
+        lfw = torch.load("Data/lfw.pt", weights_only=True)
+        cifar = torch.load("Data/cifar.pt", weights_only=True)
+        bear = torch.load("Data/bear.pt", weights_only=True)
 
-    mnist = preprocessor(mnist, length, dust_const)[1000: num_elements + 1000].to(device)
-    lfw = preprocessor(lfw, length, dust_const)[1000: num_elements + 1000].to(device)
-    cifar = preprocessor(cifar, length, dust_const)[1000: num_elements + 1000].to(device)
-    bear = preprocessor(bear, length, dust_const)[1000: num_elements + 1000].to(device)
+    mnist = preprocessor(mnist, length, dust_const)[1000 : num_elements + 1000].to(
+        device
+    )
+    lfw = preprocessor(lfw, length, dust_const)[1000 : num_elements + 1000].to(device)
+    cifar = preprocessor(cifar, length, dust_const)[1000 : num_elements + 1000].to(
+        device
+    )
+    bear = preprocessor(bear, length, dust_const)[1000 : num_elements + 1000].to(device)
     cost_matrix = cost.get_cost_matrix(length, device)
 
-    def get_g(
-        mu,
-        nu,
-        n
-    ):
+    def get_g(mu, nu, n):
         test_data_distance = []
         rand_indices1 = torch.randint(0, mu.shape[0], (n,))
         rand_indices2 = torch.randint(0, mu.shape[0], (n,))
@@ -788,53 +705,40 @@ def create_data_set(
             cost_matrix,
             epsilon,
             torch.ones_like(mu[rand_indices1]),
-            50
+            50,
         )
-        
+
         data = torch.stack(
-            (mu[rand_indices1], nu[rand_indices2], torch.log(v)),
-            dim=1
-        ).to('cpu')
+            (mu[rand_indices1], nu[rand_indices2], torch.log(v)), dim=1
+        ).to("cpu")
         # Remove samples with NaN values
         valid_samples = ~torch.isnan(data).any(dim=(1, 2))
-        data = data[valid_samples].reshape(-1, 3, length ** 2)
+        data = data[valid_samples].reshape(-1, 3, length**2)
         return data
-    
-    print('MNIST')
+
+    print("MNIST")
     test_set_mnist = get_g(
-        mnist[0:num_elements],
-        mnist[1:num_elements + 1],
-        number_of_samples
+        mnist[0:num_elements], mnist[1 : num_elements + 1], number_of_samples
     )
-    print('LFW')
+    print("LFW")
     test_set_lfw = get_g(
-        lfw[0:num_elements],
-        lfw[1:num_elements + 1],
-        number_of_samples
+        lfw[0:num_elements], lfw[1 : num_elements + 1], number_of_samples
     )
-    print('CIFAR')
+    print("CIFAR")
     test_set_cifar = get_g(
-        cifar[0:num_elements],
-        cifar[1:num_elements + 1],
-        number_of_samples
+        cifar[0:num_elements], cifar[1 : num_elements + 1], number_of_samples
     )
-    print('Bear')
+    print("Bear")
     test_set_bear = get_g(
-        bear[0:num_elements],
-        bear[1:num_elements + 1],
-        number_of_samples
+        bear[0:num_elements], bear[1 : num_elements + 1], number_of_samples
     )
-    print('Bear LFW')
+    print("Bear LFW")
     test_set_bear_lfw = get_g(
-        bear[0:num_elements],
-        lfw[1:num_elements + 1],
-        number_of_samples
+        bear[0:num_elements], lfw[1 : num_elements + 1], number_of_samples
     )
-    print('MNIST CIFAR')
+    print("MNIST CIFAR")
     test_set_mnist_cifar = get_g(
-        mnist[0:num_elements],
-        cifar[1:num_elements + 1],
-        number_of_samples
+        mnist[0:num_elements], cifar[1 : num_elements + 1], number_of_samples
     )
     print(test_set_mnist.shape)
     test_set = torch.cat(
@@ -844,32 +748,28 @@ def create_data_set(
             test_set_cifar,
             test_set_bear,
             test_set_bear_lfw,
-            test_set_mnist_cifar
+            test_set_mnist_cifar,
         ),
-        dim=0
+        dim=0,
     )
     print(test_set.shape)
-    torch.save(test_set, f'Data/data_set__dim_{length}__eps_{epsilon}.pt')
+    torch.save(test_set, f"Data/data_set__dim_{length}__eps_{epsilon}.pt")
 
 
 def create_data_set_grf(
-        num_samples,
-        num_elements,
-        length,
-        dust_const,
-        epsilon,
-        sinkhorn_iter,
-        incl_random_shapes: bool = False,
-        sampling=False,
-        device: str = 'cpu'
-    ):
+    num_samples,
+    num_elements,
+    length,
+    dust_const,
+    epsilon,
+    sinkhorn_iter,
+    incl_random_shapes: bool = False,
+    sampling=False,
+    device: str = "cpu",
+):
     cost_matrix = cost.get_cost_matrix(length, device)
 
-    def get_g_rand(
-        mu,
-        nu,
-        n
-    ):
+    def get_g_rand(mu, nu, n):
         rand_indices1 = torch.randint(0, mu.shape[0], (n,))
         rand_indices2 = torch.randint(0, mu.shape[0], (n,))
         _, v = sinkhorn.sink_vec(
@@ -878,121 +778,96 @@ def create_data_set_grf(
             cost_matrix,
             epsilon,
             torch.ones_like(mu[rand_indices1]),
-            sinkhorn_iter
+            sinkhorn_iter,
         )
-        
+
         data = torch.stack(
-            (mu[rand_indices1], nu[rand_indices2], torch.log(v)),
-            dim=1
-        ).to('cpu')
+            (mu[rand_indices1], nu[rand_indices2], torch.log(v)), dim=1
+        ).to("cpu")
         # Remove samples with NaN values
-        valid_samples = ~torch.isnan(data).any(dim=(1, 2)) & ~torch.isinf(data).any(dim=1).any(dim=1)
-        data = data[valid_samples].reshape(-1, 3, length ** 2)
+        valid_samples = ~torch.isnan(data).any(dim=(1, 2)) & ~torch.isinf(data).any(
+            dim=1
+        ).any(dim=1)
+        data = data[valid_samples].reshape(-1, 3, length**2)
         return data
-    
-    
-    def get_g(
-        mu,
-        nu
-    ):
+
+    def get_g(mu, nu):
         _, v = sinkhorn.sink_vec(
-            mu,
-            nu,
-            cost_matrix,
-            epsilon,
-            torch.ones_like(mu),
-            sinkhorn_iter
+            mu, nu, cost_matrix, epsilon, torch.ones_like(mu), sinkhorn_iter
         )
-        
-        data = torch.stack(
-            (mu, nu, torch.log(v)),
-            dim=1
-        ).to('cpu')
+
+        data = torch.stack((mu, nu, torch.log(v)), dim=1).to("cpu")
         # Remove samples with NaN values
-        valid_samples = ~torch.isnan(data).any(dim=(1, 2)) & ~torch.isinf(data).any(dim=1).any(dim=1)
-        data = data[valid_samples].reshape(-1, 3, length ** 2)
+        valid_samples = ~torch.isnan(data).any(dim=(1, 2)) & ~torch.isinf(data).any(
+            dim=1
+        ).any(dim=1)
+        data = data[valid_samples].reshape(-1, 3, length**2)
         return data
-    
+
     Mu = []
     Nu = []
     for i in range(num_samples // 2):
-        mu = grf.gaussian_random_field(
-            alpha=5,
-            size=length,
-            flag_normalize=False
-        ).to(device)
-        nu = grf.gaussian_random_field(
-            alpha=5,
-            size=length,
-            flag_normalize=False
-        ).to(device)
+        mu = grf.gaussian_random_field(alpha=5, size=length, flag_normalize=False).to(
+            device
+        )
+        nu = grf.gaussian_random_field(alpha=5, size=length, flag_normalize=False).to(
+            device
+        )
         Mu.append(mu)
-        Mu.append(mu ** 2)
+        Mu.append(mu**2)
         Nu.append(nu)
-        Nu.append(nu ** 2)
+        Nu.append(nu**2)
     for i in range(num_samples // 2):
-        mu = grf.gaussian_random_field(
-            alpha=3,
-            size=length,
-            flag_normalize=False
-        ).to(device)
-        nu = grf.gaussian_random_field(
-            alpha=3,
-            size=length,
-            flag_normalize=False
-        ).to(device)
+        mu = grf.gaussian_random_field(alpha=3, size=length, flag_normalize=False).to(
+            device
+        )
+        nu = grf.gaussian_random_field(alpha=3, size=length, flag_normalize=False).to(
+            device
+        )
         Mu.append(mu)
-        Mu.append(mu ** 2)
+        Mu.append(mu**2)
         Nu.append(nu)
-        Nu.append(nu ** 2)
+        Nu.append(nu**2)
     for i in range(num_samples // 2):
-        mu = grf.gaussian_random_field(
-            alpha=10,
-            size=length,
-            flag_normalize=False
-        ).to(device)
-        nu = grf.gaussian_random_field(
-            alpha=10,
-            size=length,
-            flag_normalize=False
-        ).to(device)
+        mu = grf.gaussian_random_field(alpha=10, size=length, flag_normalize=False).to(
+            device
+        )
+        nu = grf.gaussian_random_field(alpha=10, size=length, flag_normalize=False).to(
+            device
+        )
         Mu.append(mu)
-        Mu.append(mu ** 2)
+        Mu.append(mu**2)
         Nu.append(nu)
-        Nu.append(nu ** 2)
+        Nu.append(nu**2)
 
     if incl_random_shapes:
-        mu = rand_shapes(
-            num_samples // 2,
-            length ** 2,
-            dust_const,
-            pairs=False
-        ).float().reshape(-1, length, length).to(device)
-        nu = rand_shapes(
-            num_samples // 2,
-            length ** 2,
-            dust_const,
-            pairs=False
-        ).float().reshape(-1, length, length).to(device)
+        mu = (
+            rand_shapes(num_samples // 2, length**2, dust_const, pairs=False)
+            .float()
+            .reshape(-1, length, length)
+            .to(device)
+        )
+        nu = (
+            rand_shapes(num_samples // 2, length**2, dust_const, pairs=False)
+            .float()
+            .reshape(-1, length, length)
+            .to(device)
+        )
         for x in mu:
             mu_grf = grf.gaussian_random_field(
-                alpha=5,
-                size=length,
-                flag_normalize=False
+                alpha=5, size=length, flag_normalize=False
             ).to(device)
             Mu.append(x)
             Mu.append(x * mu_grf)
         for x in nu:
             nu_grf = grf.gaussian_random_field(
-                alpha=5,
-                size=length,
-                flag_normalize=False
+                alpha=5, size=length, flag_normalize=False
             ).to(device)
             Nu.append(x)
             Nu.append(x * nu_grf)
 
-    Mu = torch.stack(Mu).reshape(-1, length ** 2)
-    Nu = torch.stack(Nu).reshape(-1, length ** 2)
+    Mu = torch.stack(Mu).reshape(-1, length**2)
+    Nu = torch.stack(Nu).reshape(-1, length**2)
     Mu -= Mu.min(1)[0].unsqueeze(1)
     Nu -= Nu.min(1)[0].unsqueeze(1)
     Mu /= Mu.sum(dim=1, keepdim=True)
@@ -1005,13 +880,17 @@ def create_data_set_grf(
 
     test_set_rand = get_g_rand(Mu, Nu, num_elements)
     test_set = get_g(Mu, Nu)
-    
+
     test_set = torch.cat((test_set_rand, test_set), dim=0)
 
     if sampling:
         return test_set
-    print('Number of samples:', test_set.shape[0])
-    torch.save(test_set, f'Data/data_set_grf_dim_{length}_eps_{epsilon}_rand_shapes_{incl_random_shapes}.pt')
+    print("Number of samples:", test_set.shape[0])
+    torch.save(
+        test_set,
+        f"Data/data_set_grf_dim_{length}_eps_{epsilon}_rand_shapes_{incl_random_shapes}.pt",
+    )
+
 
 def get_facial_expression(n_samples: int, out_path: str) -> None:
     # Define paths
