@@ -1,6 +1,6 @@
 # UNOT: Universal Neural Optimal Transport
 This is the official repo for the paper ["Universal Neural Optimal Transport"](https://arxiv.org/abs/2212.00133v5)
-(Geuter et al., 2025).
+(Geuter et al., ICML 2025).
 To get started, install the requirements via
 
 ```bash
@@ -64,11 +64,13 @@ minutes.
 If you find this repository helpful, please consider citing our paper:
 
 ```bibtex
-@article{geuter2025universal,
-    title={Universal Neural Optimal Transport},
-    author={Geuter, J. and Kornhardt, G. and Tomasson, I. and Laschos, V.},
-    year={2025},
-    url={https://arxiv.org/abs/2212.00133v5}
+@inproceedings{
+geuter2025universal,
+title={Universal Neural Optimal Transport},
+author={Jonathan Geuter and Gregor Kornhardt and Ingimar Tomasson and Vaios Laschos},
+booktitle={Forty-second International Conference on Machine Learning},
+year={2025},
+url={https://openreview.net/forum?id=t10fde8tQ7}
 }
 ```
 
