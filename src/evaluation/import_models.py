@@ -124,8 +124,10 @@ def load_fno(
     name: str,
     modes: Tuple[int, int] = (10, 10),
     width: int = 64,
+    n_blocks: int = 4,
     activation: torch.nn.Module = torch.nn.GELU(),
     grid: bool = False,
+    size: str = "small",
     device: str = device,
 ) -> torch.nn.Module:
     """
@@ -142,10 +144,14 @@ def load_fno(
         The number of Fourier modes used in the model. Default is (10, 10), which determines the frequency resolution.
     width : int, optional
         The width (number of channels) of the hidden layers in the network. Default is 64.
+    n_blocks : int, optional
+        The number of blocks in the FNO model. Default is 4.
     activation : torch.nn.Module, optional
         The activation function to be used in the model. Default is GELU.
     grid : bool, optional
         If True, the spatial grid is included as an additional input to the model. If False, the grid is not included. Default is False.
+    size : str, optional
+        The size of the model. Can be 'small', 'standart' or custom. Default is 'small'.
     device : str, optional
         The device to load the model onto. Can be either 'cpu', 'cuda', or 'mps'.
 
@@ -171,7 +177,12 @@ def load_fno(
     # Initialize the FNO model with the given parameters
     in_channels = 4 if grid else 2
 
-    predictor = FNO2d(in_channels, 1, modes, width, activation=activation).to(device)
+    if size == "small":
+        modes = (10,10)
+        width = 32
+        n_blocks = 3
+
+    predictor = FNO2d(in_channels, 1, modes, width, n_blocks=n_blocks, activation=activation).to(device)
 
     # Load the pre-trained model weights from file
     predictor.load_state_dict(
